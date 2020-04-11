@@ -1,0 +1,453 @@
+set warnings off
+set verbose off
+clear
+
+include "./src/assertion.inp" --force
+
+# external packages needed
+include string_utils.gfn 		# must be installed
+include extra.gfn		 		# must be installed
+
+nulldata 4 -p
+
+print "Start with assert_is_type() + empty bundle"
+bundle b = null						# empty bundle case
+catch assert_is_type(b, "scalar")
+if !$error
+    stop
+endif
+
+print "Start with assert_is_type()"
+scalar scalar_1 = 4.3
+scalar scalar_2 = NA
+matrix mat_1 = {}
+matrix mat_2 = ones(1,1)
+matrix mat_3 = mnormal(2,2) * NA
+matrix mat_4 = mnormal(2,2)
+string str_1 = "ABC FT"
+string str_2 = ""
+string str_3 = "  "
+string str_4 = " &/()=/&%#*g7z89--.."
+bundle b_1 = defbundle("scalar_1", scalar_1, "str_1", str_1)
+bundle b_2 = defbundle("mat_1", mat_1, "str_1", str_1)
+series ser_1 = normal()
+series ser_2 = NA
+list L_1 = ser_1
+list L_2 = ser_1 ser_2
+matrices mats_1 = defarray(mat_1, mat_2)
+matrices mats_2 = defarray(mat_2)
+strings strarr_1 = array(0)
+strings strarr_2 = defarray(str_1, str_2, str_3, str_4)
+
+
+print "assert_is_type() for positive cases"
+assert_is_type(defbundle("foo", scalar_1), "scalar")
+assert_is_type(defbundle("foo", scalar_2), "scalar")
+assert_is_type(defbundle("foo", mat_1), "matrix")
+assert_is_type(defbundle("foo", mat_2), "matrix")
+assert_is_type(defbundle("foo", mat_3), "matrix")
+assert_is_type(defbundle("foo", mat_4), "matrix")
+assert_is_type(defbundle("foo", str_1), "string")
+assert_is_type(defbundle("foo", str_2), "string")
+assert_is_type(defbundle("foo", str_3), "string")
+assert_is_type(defbundle("foo", str_4), "string")
+assert_is_type(defbundle("foo", b_1), "bundle")
+assert_is_type(defbundle("foo", b_2), "bundle")
+assert_is_type(defbundle("foo", ser_1), "series")
+assert_is_type(defbundle("foo", ser_2), "series")
+assert_is_type(defbundle("foo", L_1), "list")
+assert_is_type(defbundle("foo", L_2), "list")
+assert_is_type(defbundle("foo", mats_1), "array")
+assert_is_type(defbundle("foo", mats_2), "array")
+assert_is_type(defbundle("foo", strarr_1), "array")
+assert_is_type(defbundle("foo", strarr_2), "array")
+
+print "assert_is_type() for negative cases"
+catch assert_is_type(defbundle("foo", scalar_1), "series")
+if !$error
+    stop
+endif
+assert_is_type(defbundle("foo", scalar_2), "matrix")
+catch assert_is_type(defbundle("foo", mat_1), "scalar")
+if !$error
+    stop
+endif
+catch assert_is_type(defbundle("foo", mat_2), "string")
+if !$error
+    stop
+endif
+catch assert_is_type(defbundle("foo", mat_3), "list")
+if !$error
+    stop
+endif
+catch assert_is_type(defbundle("foo", mat_4), "array")
+if !$error
+    stop
+endif
+catch assert_is_type(defbundle("foo", str_1), "matrix")
+if !$error
+    stop
+endif
+catch assert_is_type(defbundle("foo", str_2), "series")
+if !$error
+    stop
+endif
+catch assert_is_type(defbundle("foo", str_3), "list")
+if !$error
+        stop
+endif
+catch assert_is_type(defbundle("foo", str_4), "array")
+if !$error
+        stop
+endif
+
+catch assert_is_type(defbundle("foo", b_1), "array")
+if !$error
+    stop
+endif
+catch assert_is_type(defbundle("foo", b_2), "scalar")
+if !$error
+    stop
+endif
+
+catch assert_is_type(defbundle("foo", ser_1), "matrix")
+if !$error
+    stop
+endif
+catch assert_is_type(defbundle("foo", ser_2), "array")
+if !$error
+    stop
+endif
+
+catch assert_is_type(defbundle("foo", L_1), "series")
+if !$error
+    stop
+endif
+catch assert_is_type(defbundle("foo", L_2), "array")
+if !$error
+    stop
+endif
+
+catch assert_is_type(defbundle("foo", mats_1), "scalar")
+if !$error
+        stop
+endif
+catch assert_is_type(defbundle("foo", mats_2), "series")
+if !$error
+        stop
+endif
+catch assert_is_type(defbundle("foo", strarr_1), "list")
+if !$error
+    stop
+endif
+catch assert_is_type(defbundle("foo", strarr_2), "string")
+if !$error
+    stop
+endif
+
+
+print "assert_is_not_type()"
+catch assert_is_not_type(defbundle("foo", scalar_1), "scalar")
+if !$error
+    stop
+endif
+catch assert_is_not_type(defbundle("foo", scalar_2), "matrix")
+if !$error
+    # scalar treated like matrix
+    stop
+endif
+catch assert_is_not_type(defbundle("foo", mat_1), "matrix")
+if !$error
+    stop
+endif
+catch assert_is_not_type(defbundle("foo", mat_2), "matrix")
+if !$error
+    stop
+endif
+assert_is_not_type(defbundle("foo", mat_3), "list")
+catch assert_is_not_type(defbundle("foo", mat_4), "matrix")
+if !$error
+    stop
+endif
+
+assert_is_not_type(defbundle("foo", str_1), "array")
+assert_is_not_type(defbundle("foo", str_2), "matrix")
+catch assert_is_not_type(defbundle("foo", str_3), "string")
+if !$error
+    stop
+endif
+assert_is_not_type(defbundle("foo", str_4), "list")
+catch assert_is_not_type(defbundle("foo", b_1), "bundle")
+if !$error
+        stop
+endif
+assert_is_not_type(defbundle("foo", b_2), "series")
+assert_is_not_type(defbundle("foo", ser_1), "scalar")
+catch assert_is_not_type(defbundle("foo", ser_2), "series")
+if !$error
+    stop
+endif
+
+catch assert_is_not_type(defbundle("foo", L_1), "list")
+if !$error
+    stop
+endif
+assert_is_not_type(defbundle("foo", L_2), "matrix")
+
+catch assert_is_not_type(defbundle("foo", mats_1), "array")
+if !$error
+    stop
+endif
+assert_is_not_type(defbundle("foo", mats_2), "matrix")
+assert_is_not_type(defbundle("foo", strarr_1), "string")
+assert_is_not_type(defbundle("foo", strarr_2), "list")
+
+
+
+print "Start with assert_true()"
+assert_true(1)
+catch assert_true(0)
+if !$error
+    stop
+endif
+catch assert_true(NA)
+if !$error
+    stop
+endif
+assert_true(2)
+assert_true(-1)
+
+
+print "Start with assert_false()"
+catch assert_false(1)
+if !$error
+    stop
+endif
+assert_false(0)
+catch assert_false(NA)
+if !$error
+    stop
+endif
+catch assert_false(2)
+if !$error
+    stop
+endif
+catch assert_false(-1)
+if !$error
+    stop
+endif
+
+
+print "Start with assert_equal_str()"
+assert_equal_str("ABC", "ABC")
+
+catch assert_equal_str(" ABC", "ABC")
+if !$error
+    stop
+endif
+assert_equal_str(toupper("abc"), "ABC")
+assert_equal_str("", "")
+catch assert_equal_str("", "__/%(=O?")
+if !$error
+    stop
+endif
+assert_equal_str("739838", "739838")
+
+
+print "Start with assert_not_equal_str()"
+catch assert_not_equal_str("ABC", "ABC")
+if !$error
+    stop
+endif
+assert_not_equal_str(" ABC", "ABC")
+catch assert_not_equal_str(toupper("abc"), "ABC")
+if !$error
+    stop
+endif
+catch assert_not_equal_str("", "")
+if !$error
+    stop
+endif
+assert_not_equal_str("", "__/%(=O?")
+catch assert_not_equal_str("739838", "739838")
+if !$error
+    stop
+endif
+
+
+
+print "Start with assert_equal_num()"
+assert_equal_num(22, 22)
+catch assert_equal_num(1.5, 1.49)
+if !$error
+    stop
+endif
+catch assert_equal_num(-34, 34)
+if !$error
+    stop
+endif
+catch assert_equal_num(NA, 34)
+if !$error
+    stop
+endif
+catch assert_equal_num(34, NA)
+if !$error
+    stop
+endif
+catch assert_equal_num(NA, NA)
+if !$error
+    stop
+endif
+catch assert_equal_num(-1, -1.001)
+if !$error
+    stop
+endif
+catch assert_equal_num(log(22), log(0)))
+if !$error
+    stop
+endif
+
+
+print "Start with assert_not_equal_num()"
+catch assert_not_equal_num(22, 22)
+if !$error
+    stop
+endif
+assert_not_equal_num(-34, 34)
+catch assert_not_equal_num(NA, 34)
+if !$error
+    stop
+endif
+catch assert_not_equal_num(34, NA)
+if !$error
+    stop
+endif
+catch assert_not_equal_num(NA, NA)
+if !$error
+    stop
+endif
+assert_not_equal_num(-1, -1.001)
+
+
+print "Start with assert_greater_equal_num()"
+assert_greater_equal_num(22, 22)
+catch assert_greater_equal_num(-34, 34)
+if !$error
+    stop
+endif
+assert_greater_equal_num(34, -34)
+catch assert_greater_equal_num(NA, 34)
+if !$error
+    stop
+endif
+catch assert_greater_equal_num(34, NA)
+if !$error
+    stop
+endif
+catch assert_greater_equal_num(NA, NA)
+if !$error
+    stop
+endif
+assert_greater_equal_num(-1, -1.001)
+catch assert_greater_equal_num(log(22), log(0))
+if !$error
+    stop
+endif
+
+
+print "Start with assert_less_equal_num()"
+assert_less_equal_num(22, 22)
+assert_less_equal_num(-34, 34)
+catch assert_less_equal_num(34, -34)
+if !$error
+    stop
+endif
+catch assert_less_equal_num(NA, 34)
+if !$error
+    stop
+endif
+catch assert_less_equal_num(34, NA)
+if !$error
+    stop
+endif
+catch assert_less_equal_num(NA, NA)
+if !$error
+    stop
+endif
+catch assert_less_equal_num(-1, -1.001)
+if !$error
+    stop
+endif
+catch assert_less_equal_num(log(22), log(0))
+if !$error
+    stop
+endif
+
+
+
+print "Start with assert_almost_equal_num()"
+catch assert_almost_equal_num(0.5, 1)
+if !$error
+    stop
+endif
+catch assert_almost_equal_num(0.99, 1, 1e-2)
+if !$error
+    stop
+endif
+assert_almost_equal_num(0.991, 1, 1e-2)
+catch assert_almost_equal_num(-0.99, -1, 1e-2)
+if !$error
+    stop
+endif
+assert_almost_equal_num(-0.991, -1, 1e-2)
+catch assert_almost_equal_num(0.99, -1, 1e-2)
+if !$error
+    stop
+endif
+catch assert_almost_equal_num(0.991, -1, 1e-2)
+if !$error
+    stop
+endif
+catch assert_almost_equal_num(0.5, NA)
+if !$error
+    stop
+endif
+catch assert_almost_equal_num(NA, 1)
+if !$error
+    stop
+endif
+catch assert_almost_equal_num(NA, NA)
+if !$error
+    stop
+endif
+
+
+print "Start with assert_not_almost_equal_num()"
+assert_not_almost_equal_num(0.5, 1)
+assert_not_almost_equal_num(0.99, 1, 1e-2)
+catch assert_not_almost_equal_num(0.991, 1, 1e-2)
+if !$error
+    stop
+endif
+assert_not_almost_equal_num(-0.99, -1, 1e-2)
+catch assert_not_almost_equal_num(-0.991, -1, 1e-2)
+if !$error
+    stop
+endif
+assert_not_almost_equal_num(0.99, -1, 1e-2)
+assert_not_almost_equal_num(0.991, -1, 1e-2)
+catch assert_not_almost_equal_num(0.5, NA)
+if !$error
+    stop
+endif
+catch assert_not_almost_equal_num(NA, 1)
+if !$error
+    stop
+endif
+catch assert_not_almost_equal_num(NA, NA)
+if !$error
+    stop
+endif
+
+
+printf "\nInfo: All tests passed.\n"

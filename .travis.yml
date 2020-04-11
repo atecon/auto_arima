@@ -1,0 +1,23 @@
+language: shell
+
+services:
+  - docker
+
+os: linux
+
+dist: eoan
+
+git:
+  depth: 1
+
+notifications:
+  email: false
+
+before_install:
+  - docker build -t gretl .
+  - docker run --detach --entrypoint=/bin/bash --name test -t gretl
+  - docker exec -it test gretlcli -i extra
+  - docker exec -it test gretlcli -i string_utils
+  
+script:
+  - docker exec -it test /bin/bash run_tests.sh
