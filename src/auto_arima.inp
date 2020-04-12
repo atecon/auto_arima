@@ -1,0 +1,100 @@
+function scalar y_has_zero_vals (const series y, const bundle self)
+/* Check whether y includes only zero values.
+    return: 0 if not zero or negative values, otherwise 1. */
+
+    smpl y --no-missing
+    scalar ret = (sum(y == 0) > 0) ? TRUE : FALSE
+    if self.verbose > 0 && ret == TRUE
+        printWarning("Endogenous series includes only zero values")
+        self.error = TRUE
+    endif
+
+    return ret
+end function
+
+
+function bundle set_bundle (const series y,
+                            string which,
+                            bundle opts[null])
+    /* Compile self bundle by merging eventual information
+    from opts-bundle. */
+
+    if !exists(opts)
+        bundle opts = null
+    endif
+
+    bundle self = default_values(y)
+    self = opts + self			# override defaults
+    self.name_endo = argname(y)
+
+    return self
+end function
+
+
+function bundle default_values (const series y)
+    /* Set default values */
+
+    bundle self = null
+    scalar self.error = FALSE
+    scalar self.y_is_always_zero = FALSE
+    list self.xlist = null
+    scalar self.seasonal = data_has_seasonality()
+    strings self.supported_estimators = get_estimator_names(self.is_seas)
+    scalar self.verbose = 1
+
+    # arima parameters
+    scalar self.start_p = 2
+    scalar self.start_q = 2
+    scalar self.start_P = 1
+    scalar self.start_Q = 1
+
+    scalar self.intercept = TRUE
+
+    # TODO: check for what these are
+    #    scalar self.stationary = FALSE
+    #    scalar self.stepwise = TRUE
+    #    scalar self.nmodels = 94,
+    #  trace = FALSE,
+    #  approximation = (length(x) > 150 | frequency(x) > 12),
+    #  method = NULL,
+    #  truncate = NULL,
+    #  test = c("kpss", "adf", "pp"),
+    #  test.args = list(),
+    #  seasonal.test = c("seas", "ocsb", "hegy", "ch"),
+    #  seasonal.test.args = list(),
+    #  allowdrift = TRUE,
+    #  allowmean = TRUE,
+    #  lambda = NULL,
+    #  biasadj = FALSE,
+    #  parallel = FALSE,
+    #  num.cores = 2,
+
+    return self
+end function
+
+
+
+function bundle auto_arima (const series y,
+                            const int p_max[1::] "AR order",
+                            const int d_max[1::] "Differencing order",
+                            const int q_max[1::] "MA order",
+                            bundle opts[null] "Bundle incl. optional parameters")
+    /* Main package function */
+
+    if !exists(opts)
+        bundle opts = null
+    endif
+    bundle self = set_bundle(y, which, opts)
+
+arima
+    auto.arima(
+    y,
+      d = NA,
+      D = NA,
+      max.p = 5,
+      max.q = 5,
+      max.P = 2,
+      max.Q = 2,
+      max.order = 5,
+      max.d = 2,
+      max.D = 1,
