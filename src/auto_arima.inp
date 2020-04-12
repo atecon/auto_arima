@@ -1,20 +1,19 @@
-function scalar y_has_zero_vals (const series y, const bundle self)
+function void y_has_zero_values (bundle *self)
 /* Check whether y includes only zero values.
     return: 0 if not zero or negative values, otherwise 1. */
 
+    series y = self.y
     smpl y --no-missing
-    scalar ret = (sum(y == 0) > 0) ? TRUE : FALSE
-    if self.verbose > 0 && ret == TRUE
-        printWarning("Endogenous series includes only zero values")
+
+    if self.verbose > 0 && (sum(y == 0) > 0) ? TRUE : FALSE
+        printWarning(sprintf("Endogenous '%s' includes only zero values", self.name_endo))
         self.error = TRUE
     endif
 
-    return ret
 end function
 
 
 function bundle set_bundle (const series y,
-                            string which,
                             bundle opts[null])
     /* Compile self bundle by merging eventual information
     from opts-bundle. */
@@ -31,24 +30,37 @@ function bundle set_bundle (const series y,
 end function
 
 
+
+
+
 function bundle default_values (const series y)
     /* Set default values */
 
     bundle self = null
     scalar self.error = FALSE
     scalar self.y_is_always_zero = FALSE
-    list self.xlist = null
+    scalar self.intercept = TRUE
     scalar self.seasonal = data_has_seasonality()
-    strings self.supported_estimators = get_estimator_names(self.is_seas)
     scalar self.verbose = 1
+    list self.xlist = null
+
+    strings self.methods_supported  = defarray("exact_ml", "conditional_ml")
+    string self.estimation_method = "exact_ml"
 
     # arima parameters
-    scalar self.start_p = 2
-    scalar self.start_q = 2
-    scalar self.start_P = 1
-    scalar self.start_Q = 1
+    scalar self.max_d = 2
+    scalar self.max_p = 5
+    scalar self.max_q = 5
 
-    scalar self.intercept = TRUE
+    # seasonal arima parameters
+    if self.seasonal
+        scalar self.start_D = 0		# TODO: makes sense?
+        scalar self.start_P = 1
+        scalar self.start_Q = 1
+        scalar self.max_D = 1
+        scalar self.max_P = 2
+        scalar self.max_Q = 2
+    endif
 
     # TODO: check for what these are
     #    scalar self.stationary = FALSE
@@ -74,27 +86,183 @@ end function
 
 
 
-function bundle auto_arima (const series y,
-                            const int p_max[1::] "AR order",
-                            const int d_max[1::] "Differencing order",
-                            const int q_max[1::] "MA order",
+function bundle auto_arima (const series y "Endogenous",
+                            const int min_p[0::1] "AR order",
+                            const int min_d[0::0] "Differencing order",
+                            const int min_q[0::1] "MA order",
+                            const list xlist[null] "Exogenous",
                             bundle opts[null] "Bundle incl. optional parameters")
     /* Main package function */
 
     if !exists(opts)
         bundle opts = null
     endif
-    bundle self = set_bundle(y, which, opts)
+    bundle self = set_bundle(y, opts)
 
-arima
-    auto.arima(
-    y,
-      d = NA,
-      D = NA,
-      max.p = 5,
-      max.q = 5,
-      max.P = 2,
-      max.Q = 2,
-      max.order = 5,
-      max.d = 2,
-      max.D = 1,
+    series self.y = y
+    list self.xlist = xlist
+    scalar self.min_p = min_p
+    scalar self.min_d = min_d
+    scalar self.min_q = min_q
+
+    do_initial_checks(&self)
+    if self.error
+        return self
+    endif
+
+    prepare_arima_option_string(&config)
+
+
+
+    return self
+end function
+
+
+scalar self.max_D = 1
+scalar self.max_P = 2
+scalar self.max_Q = 2
+
+
+
+function void arima_d_parameters (matrix *parameters, const bundle self)
+    /* */
+
+    ** HIER WEITERMACHEN 
+
+    loop d_loop = self.min_d..self.max_d -q
+
+    endloop
+
+end function
+
+
+function matrix arima_parameter_combinations (const bundle self)
+/* Compile matrix for each parameter combination (rows) holding
+   the distinct parameter values (columns).
+    return: matrix holding all combinations. */
+
+
+    # TODO think about a clever structure avoiding 6 inner loops
+    matrix parameters = NA * zeros(1,6)
+
+    scalar combination = 1
+    loop p_loop = self.min_p..self.max_p -q
+
+        parameters[combination, 1] = $p_loop
+
+        loop d_loop = self.min_d..self.max_d -q
+
+            loop q_loop = self.min_q..self.max_q -q
+
+
+
+            endloop
+
+
+        endloop
+
+    endloop
+
+end function
+
+
+function void prepare_arima_option_string (bundle *self)
+    /* */
+
+    string self.arima_option_string = ""
+    if self.verbose == 0
+        self.arima_option_string += "--quiet "
+    elif self.verbose == 2
+        self.arima_option_string += "--verbose "
+    endif
+
+    if self.intercept == FALSE
+        self.arima_option_string += "--nc "
+    endif
+
+    if self.estimation_method == "conditional_ml"
+        self.arima_option_string += "--conditional "
+    endif
+
+    # TODO: many more options may be added -- see 'help arima'
+end function
+
+
+function void drop_intercept_from_xlist (bundle *self)
+    /* Drop intercept from xlist if it should not enter the model. */
+
+    if inlist(self.xlist, "const") && self.intercept == FALSE
+        if self.verbose == 1
+            printInfo("Intercept dropped as you set intercept == FALSE")
+        endif
+        self.xlist -= const
+    endif
+end function
+
+
+function void add_intercept_to_xlist (bundle *self)
+    /* Add intercept to xlist if it should enter the model. */
+
+    if !inlist(self.xlist, "const") && self.intercept == TRUE
+        if self.verbose == 1
+            printInfo("Intercept added to xlist as you set intercept == TRUE")
+        endif
+        self.xlist += const
+    endif
+end function
+
+
+function void do_initial_checks (bundle *self)
+    /* Helper function perfoming some initial checks */
+
+    y_has_zero_values(&self)
+    drop_intercept_from_xlist(&self)
+
+end function
+
+# TODO: test
+function scalar estimation_method_supported (const bundle self)
+    /* */
+
+
+    self.estimation_method = tolower(self.estimation_method)
+    if instrings(self.methods_supported, self.estimation_method)
+        return 1
+    else
+        printWarning(sprintf("Estimation method '%s' not supported.",\
+          self.estimation_method))
+        printInfo(sprintf("Will switch to %s method.", self.methods_supported[1]))
+        self.estimation_method = self.methods_supported[1]
+        return 0
+    endif
+end function
+
+
+
+function scalar data_has_seasonality (void)
+    /* Flag seasonality of data set */
+
+    return ($pd > 1) ? 1 : 0
+end function
+
+
+
+
+
+function void printInfo (const string s)
+    printf "\nInfo: %s\n", s
+end function
+
+function void printWarning (const string s)
+    printf "\nWarning: %s\n", s
+end function
+
+function void printError (const string s)
+    printf "\nError: %s\n", s
+end function
+
+
+
+
+
+

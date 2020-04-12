@@ -1,0 +1,12 @@
+clear
+set verbose off
+
+include "/home/at/git/auto_arima/src/auto_arima.inp" --force
+
+open denmark.gdt -q -p
+
+list xlist = null
+series y = LRM
+series y = 0
+bundle Bout = auto_arima(y)
+Bout
