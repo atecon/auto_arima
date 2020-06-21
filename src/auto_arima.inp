@@ -30,9 +30,6 @@ function bundle set_bundle (const series y,
 end function
 
 
-
-
-
 function bundle default_values (const series y)
     /* Set default values */
 
@@ -49,14 +46,14 @@ function bundle default_values (const series y)
 
     # arima parameters
     scalar self.max_d = 2
-    scalar self.max_p = 5
-    scalar self.max_q = 5
+    scalar self.max_p = 2
+    scalar self.max_q = 2
 
     # seasonal arima parameters
     if self.seasonal
-        scalar self.start_D = 0		# TODO: makes sense?
-        scalar self.start_P = 1
-        scalar self.start_Q = 1
+        scalar self.min_D = 0		# TODO: makes sense?
+        scalar self.min_P = 1
+        scalar self.min_Q = 1
         scalar self.max_D = 1
         scalar self.max_P = 2
         scalar self.max_Q = 2
@@ -85,6 +82,29 @@ function bundle default_values (const series y)
 end function
 
 
+function strings get_parameter_names (const bundle self)
+    if self.seasonal
+        return defarray("p", "d", "q", "P", "D", "Q")
+    else
+        return defarray("p", "d", "q")
+    endif
+end function
+
+
+function scalar n_combinations (const bundle self)
+    /* Compute number of combinations. */
+
+    scalar n = 1
+    strings parameters = get_parameter_names(self)
+
+    loop foreach i parameters
+        string param = parameters[i]
+        scalar n = n * (1 + self.max_@param - self.min_@param)
+    endloop
+
+    return n
+end function
+
 
 function bundle auto_arima (const series y "Endogenous",
                             const int min_p[0::1] "AR order",
@@ -110,59 +130,74 @@ function bundle auto_arima (const series y "Endogenous",
         return self
     endif
 
-    prepare_arima_option_string(&config)
+    prepare_arima_option_string(&self)
 
-
+    self.n_combinations = n_combinations(self)
+    matrix parameter_combinations = matrix_parameter_combinations(self)
+    parameter_combinations
+    stop
 
     return self
 end function
 
+/*
+   {1 0 0}
+   {1 0 1}
+   {1 0 2}
+   {1 1 0}
+   {1 1 1}
+   {1 1 2}
+   {1 2 0}
+   {1 2 1}
+   {1 2 2}
+   {2 0 0}
+   {2 0 1}
+   {2 0 2}
+   {2 1 0}
+   {2 1 1}
+   {2 1 2}
+   {2 2 0}
+   {2 2 1}
+   {2 2 2}
+*/
 
-scalar self.max_D = 1
-scalar self.max_P = 2
-scalar self.max_Q = 2
 
-
-
-function void arima_d_parameters (matrix *parameters, const bundle self)
-    /* */
-
-    ** HIER WEITERMACHEN 
-
-    loop d_loop = self.min_d..self.max_d -q
-
-    endloop
-
-end function
-
-
-function matrix arima_parameter_combinations (const bundle self)
+function matrix matrix_parameter_combinations (const bundle self)
 /* Compile matrix for each parameter combination (rows) holding
    the distinct parameter values (columns).
     return: matrix holding all combinations. */
 
+    scalar n_combinations = n_combinations(self)
+    matrix mat = NA * zeros(n_combinations, nelem(get_parameter_names(self)))
+    scalar row_counter = 1
 
-    # TODO think about a clever structure avoiding 6 inner loops
-    matrix parameters = NA * zeros(1,6)
-
-    scalar combination = 1
-    loop p_loop = self.min_p..self.max_p -q
-
-        parameters[combination, 1] = $p_loop
-
-        loop d_loop = self.min_d..self.max_d -q
-
-            loop q_loop = self.min_q..self.max_q -q
-
-
-
+    loop p_loop=self.min_p..self.max_p -q
+        loop d_loop=self.min_d..self.max_d -q
+            loop q_loop=self.min_q..self.max_q -q
+                loop P_loop=self.min_P..self.max_P -q
+                    loop D_loop=self.min_D..self.max_D -q
+                        loop Q_loop=self.min_Q..self.max_Q -q
+                            mat[row_counter, 6] = $Q_loop
+                            row_counter++
+                            mat
+                        endloop
+                        mat[row_counter, 5] = $D_loop
+                        row_counter++
+                    endloop
+                    mat[row_counter, 4] = $P_loop
+                    row_counter++
+                endloop
+                mat[row_counter, 3] = $q_loop
+                row_counter++
             endloop
-
-
+            mat[row_counter, 2] = $d_loop
+            row_counter++
         endloop
-
+        mat[row_counter, 1] = $p_loop
+        row_counter++
     endloop
 
+    return mat
 end function
 
 

@@ -7,6 +7,6 @@ open denmark.gdt -q -p
 
 list xlist = null
 series y = LRM
-series y = 0
+#series y = 0
 bundle Bout = auto_arima(y)
 Bout
