@@ -13,8 +13,34 @@ function void y_has_zero_values (bundle *self)
 end function
 
 
-function bundle set_bundle (const series y,
-                            bundle opts[null])
+function void add_intercept_to_xlist (bundle *self)
+    /* Add intercept to xlist if it should enter the model. */
+
+    if !inlist(self.xlist, "const") && self.intercept == TRUE
+        if self.verbose == 1
+            printInfo("Intercept added to xlist as you set intercept == TRUE")
+        endif
+        self.xlist += const
+    endif
+end function
+
+
+function void do_initial_checks (bundle *self)
+    /* Helper function perfoming some initial checks */
+
+    y_has_zero_values(&self)
+    drop_intercept_from_xlist(&self)
+end function
+
+function scalar data_has_seasonality (void)
+    /* Flag seasonality of data set */
+
+    return ($pd > 1) ? 1 : 0
+end function
+
+
+function bundle set_bundle_and_get_defaults (const series y,
+                                        bundle opts[null])
     /* Compile self bundle by merging eventual information
     from opts-bundle. */
 
@@ -45,18 +71,21 @@ function bundle default_values (const series y)
     string self.estimation_method = "exact_ml"
 
     # arima parameters
-    scalar self.max_d = 2
-    scalar self.max_p = 2
-    scalar self.max_q = 2
+    scalar self.min_p = 0
+    scalar self.max_p = 1   # TODO: $pd
+    scalar self.min_d = 1
+    scalar self.max_d = 1
+    scalar self.min_q = 1
+    scalar self.max_q = 1
 
     # seasonal arima parameters
     if self.seasonal
-        scalar self.min_D = 0		# TODO: makes sense?
-        scalar self.min_P = 1
-        scalar self.min_Q = 1
+        scalar self.min_D = 1		# TODO: makes sense?
         scalar self.max_D = 1
-        scalar self.max_P = 2
-        scalar self.max_Q = 2
+        scalar self.min_P = 0
+        scalar self.max_P = 1
+        scalar self.min_Q = 0
+        scalar self.max_Q = 1
     endif
 
     # TODO: check for what these are
@@ -106,25 +135,19 @@ function scalar n_combinations (const bundle self)
 end function
 
 
-# TODO: User passes a bundle with key-values referencing to min_/max_p etc
 function bundle auto_arima (const series y "Endogenous",
-                            const int min_p[0::1] "AR order",
-                            const int min_d[0::0] "Differencing order",
-                            const int min_q[0::1] "MA order",
                             const list xlist[null] "Exogenous",
-                            bundle opts[null] "Bundle incl. optional parameters")
-    /* Main package function */
+                            bundle opts[null] "Parameter bundle")
+
+    # TODO: User passes a bundle with key-values referencing to min_/max_p etc
 
     if !exists(opts)
         bundle opts = null
     endif
-    bundle self = set_bundle(y, opts)
+    bundle self = set_bundle_and_get_defaults(y, opts)
 
     series self.y = y
     list self.xlist = xlist
-    scalar self.min_p = min_p
-    scalar self.min_d = min_d
-    scalar self.min_q = min_q
 
     do_initial_checks(&self)
     if self.error
@@ -133,51 +156,97 @@ function bundle auto_arima (const series y "Endogenous",
 
     prepare_arima_option_string(&self)
 
-    self.n_combinations = n_combinations(self)
-    matrix parameter_combinations = matrix_parameter_combinations(self)
-    parameter_combinations
-    stop
+    scalar self.n_combinations = n_combinations(self)
+    # TODO: depends on seasonal: yes/no
+    matrix self.get_parameter_matrix = get_parameter_matrix(self)
+
+    # loop over self.parameter_combinations
+    # estimate models
+    # store information criteria
+    # compare and sort models by criteria
 
     return self
 end function
 
 
-function matrix parameter_matrix (void)
-    /* code description
-    return: type, description */
+function matrix get_parameter_matrix (const bundle self)
+    /* Prepare matrix with all parameter combinations for ARIMA. */
 
-    minp = 0
-    mind = 0
-    minq = 1
-    maxp = 2
-    maxd = 1
-    maxq = 2
+    if data_has_seasonality()
+        return sarima_parameter_matrix(self)
+    else
+        return arima_parameter_matrix(self)
+    endif
+end function
 
-    scalar n_p = 1 + maxp - minp
-    scalar n_d = 1 + maxd - mind
-    scalar n_q = 1 + maxq - minq
 
-    scalar k = 3        # n parameters
-    scalar n_rows = n_p * n_d * n_q
+function scalar n_lags (const int min_lag[0::], const int max_lag[0::])
+    return 1 + max_lag - min_lag
+end function
+
+
+function matrix sarima_parameter_matrix (const bundle self)
+    /* Prepare the parameter combindations for SARIMA. */
+
+    scalar k = 6        # p, d, q, P, D, Q
+    scalar n_p = n_lags(self.min_p, self.max_p)
+    scalar n_d = n_lags(self.min_d, self.max_d)
+    scalar n_q = n_lags(self.min_q, self.max_q)
+    scalar n_P = n_lags(self.min_P, self.max_P)
+    scalar n_D = n_lags(self.min_D, self.max_D)
+    scalar n_Q = n_lags(self.min_Q, self.max_Q)
+
+    scalar n_rows = n_p * n_d * n_q * n_P * n_D * n_Q
     matrix combs = mshape(NA, n_rows, k)
 
-    # start with q (the rightest variable)
-    matrix m = ones(n_q, (n_rows/n_q)) .* seq(minq, maxq)'
-    combs[,3] = vec(m)
+    # start with Q (the rightest variable)
+    matrix m = ones(n_Q, (n_rows/n_Q)) .* seq(self.min_Q, self.max_Q)'
+    combs[,6] = vec(m)
 
-    # 'd'
-    matrix m = ones(n_d, n_q) .* seq(mind, maxd)'
+    matrix m = ones(n_D, n_Q) .* seq(self.min_D, self.max_D)'
     m = vec(m')
-    combs[,2] = vec(m .* ones(rows(m), n_p))
+    scalar factor = n_P * n_q * n_d * n_p
+    combs[,5] = vec(m .* ones(rows(m), factor))
 
-    # 'p'
-    matrix m = ones(n_p, n_q * n_d) .* seq(minp, maxp)'
+
+*** HIER WEITERMACHEN ***
+    matrix m = ones(n_P, n_D) .* seq(self.min_P, self.max_P)'
+    m = vec(m')
+    scalar factor = n_q * n_d * n_p
+    combs[,4] = vec(m .* ones(rows(m), factor))
+
+
+    matrix m = ones(n_p, n_q * n_d) .* seq(self.min_p, self.max_p)'
     combs[,1] = vec(m')
 
     return combs
 end function
 
 
+function matrix arima_parameter_matrix (const bundle self)
+    /* Prepare the parameter combindations for ARIMA. */
+
+    scalar k = 3        # p, d, q
+    scalar n_p = n_lags(self.min_p, self.max_p)
+    scalar n_d = n_lags(self.min_d, self.max_d)
+    scalar n_q = n_lags(self.min_q, self.max_q)
+
+    scalar n_rows = n_p * n_d * n_q
+    matrix combs = mshape(NA, n_rows, k)
+
+    # start with q (the rightest variable)
+    matrix m = ones(n_q, (n_rows/n_q)) .* seq(self.min_q, self.max_q)'
+    combs[,3] = vec(m)
+
+    matrix m = ones(n_d, n_q) .* seq(self.min_d, self.max_d)'
+    m = vec(m')
+    combs[,2] = vec(m .* ones(rows(m), n_p))
+
+    matrix m = ones(n_p, n_q * n_d) .* seq(self.min_p, self.max_p)'
+    combs[,1] = vec(m')
+
+    return combs
+end function
 
 
 function void prepare_arima_option_string (bundle *self)
@@ -214,30 +283,9 @@ function void drop_intercept_from_xlist (bundle *self)
 end function
 
 
-function void add_intercept_to_xlist (bundle *self)
-    /* Add intercept to xlist if it should enter the model. */
-
-    if !inlist(self.xlist, "const") && self.intercept == TRUE
-        if self.verbose == 1
-            printInfo("Intercept added to xlist as you set intercept == TRUE")
-        endif
-        self.xlist += const
-    endif
-end function
-
-
-function void do_initial_checks (bundle *self)
-    /* Helper function perfoming some initial checks */
-
-    y_has_zero_values(&self)
-    drop_intercept_from_xlist(&self)
-
-end function
-
 # TODO: test
 function scalar estimation_method_supported (const bundle self)
     /* */
-
 
     self.estimation_method = tolower(self.estimation_method)
     if instrings(self.methods_supported, self.estimation_method)
@@ -250,15 +298,6 @@ function scalar estimation_method_supported (const bundle self)
         return 0
     endif
 end function
-
-
-
-function scalar data_has_seasonality (void)
-    /* Flag seasonality of data set */
-
-    return ($pd > 1) ? 1 : 0
-end function
-
 
 
 function void printInfo (const string s)
