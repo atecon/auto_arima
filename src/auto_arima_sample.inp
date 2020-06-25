@@ -3,6 +3,11 @@ set verbose off
 
 include "/home/at/git/auto_arima/src/auto_arima.inp" --force
 
+
+m = parameter_matrix()
+m
+stop
+
 open denmark.gdt -q -p
 
 list xlist = null

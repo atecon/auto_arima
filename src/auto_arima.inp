@@ -1,5 +1,5 @@
 function void y_has_zero_values (bundle *self)
-/* Check whether y includes only zero values.
+    /* Check whether y includes only zero values.
     return: 0 if not zero or negative values, otherwise 1. */
 
     series y = self.y
@@ -92,20 +92,21 @@ end function
 
 
 function scalar n_combinations (const bundle self)
-    /* Compute number of combinations. */
+    /* Compute number of parameter combinations. */
 
     scalar n = 1
     strings parameters = get_parameter_names(self)
 
     loop foreach i parameters
         string param = parameters[i]
-        scalar n = n * (1 + self.max_@param - self.min_@param)
+        scalar n *= (1 + self.max_@param - self.min_@param)
     endloop
 
     return n
 end function
 
 
+# TODO: User passes a bundle with key-values referencing to min_/max_p etc
 function bundle auto_arima (const series y "Endogenous",
                             const int min_p[0::1] "AR order",
                             const int min_d[0::0] "Differencing order",
@@ -140,65 +141,43 @@ function bundle auto_arima (const series y "Endogenous",
     return self
 end function
 
-/*
-   {1 0 0}
-   {1 0 1}
-   {1 0 2}
-   {1 1 0}
-   {1 1 1}
-   {1 1 2}
-   {1 2 0}
-   {1 2 1}
-   {1 2 2}
-   {2 0 0}
-   {2 0 1}
-   {2 0 2}
-   {2 1 0}
-   {2 1 1}
-   {2 1 2}
-   {2 2 0}
-   {2 2 1}
-   {2 2 2}
-*/
 
+function matrix parameter_matrix (void)
+    /* code description
+    return: type, description */
 
-function matrix matrix_parameter_combinations (const bundle self)
-/* Compile matrix for each parameter combination (rows) holding
-   the distinct parameter values (columns).
-    return: matrix holding all combinations. */
+    minp = 0
+    mind = 0
+    minq = 1
+    maxp = 2
+    maxd = 1
+    maxq = 2
 
-    scalar n_combinations = n_combinations(self)
-    matrix mat = NA * zeros(n_combinations, nelem(get_parameter_names(self)))
-    scalar row_counter = 1
+    scalar n_p = 1 + maxp - minp
+    scalar n_d = 1 + maxd - mind
+    scalar n_q = 1 + maxq - minq
 
-    loop p_loop=self.min_p..self.max_p -q
-        loop d_loop=self.min_d..self.max_d -q
-            loop q_loop=self.min_q..self.max_q -q
-                loop P_loop=self.min_P..self.max_P -q
-                    loop D_loop=self.min_D..self.max_D -q
-                        loop Q_loop=self.min_Q..self.max_Q -q
-                            mat[row_counter, 6] = $Q_loop
-                            row_counter++
-                            mat
-                        endloop
-                        mat[row_counter, 5] = $D_loop
-                        row_counter++
-                    endloop
-                    mat[row_counter, 4] = $P_loop
-                    row_counter++
-                endloop
-                mat[row_counter, 3] = $q_loop
-                row_counter++
-            endloop
-            mat[row_counter, 2] = $d_loop
-            row_counter++
-        endloop
-        mat[row_counter, 1] = $p_loop
-        row_counter++
-    endloop
+    scalar k = 3        # n parameters
+    scalar n_rows = n_p * n_d * n_q
+    matrix combs = mshape(NA, n_rows, k)
 
-    return mat
+    # start with q (the rightest variable)
+    matrix m = ones(n_q, (n_rows/n_q)) .* seq(minq, maxq)'
+    combs[,3] = vec(m)
+
+    # 'd'
+    matrix m = ones(n_d, n_q) .* seq(mind, maxd)'
+    m = vec(m')
+    combs[,2] = vec(m .* ones(rows(m), n_p))
+
+    # 'p'
+    matrix m = ones(n_p, n_q * n_d) .* seq(minp, maxp)'
+    combs[,1] = vec(m')
+
+    return combs
 end function
+
+
 
 
 function void prepare_arima_option_string (bundle *self)
@@ -282,8 +261,6 @@ end function
 
 
 
-
-
 function void printInfo (const string s)
     printf "\nInfo: %s\n", s
 end function
@@ -295,9 +272,5 @@ end function
 function void printError (const string s)
     printf "\nError: %s\n", s
 end function
-
-
-
-
 
 
