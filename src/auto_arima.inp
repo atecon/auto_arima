@@ -158,14 +158,88 @@ function bundle auto_arima (const series y "Endogenous",
 
     scalar self.n_combinations = n_combinations(self)
     # TODO: depends on seasonal: yes/no
-    matrix self.get_parameter_matrix = get_parameter_matrix(self)
+    matrix self.parameter_matrix = get_parameter_matrix(self)
 
-    # loop over self.parameter_combinations
-    # estimate models
-    # store information criteria
+    # loop over self.parameter_combinations, estimate models and store information criteria
+    estimate_models(&self)
+    eval self.criteria_values
     # compare and sort models by criteria
 
     return self
+end function
+
+
+function void get_parameters (const matrix parameter_matrix,
+                            scalar *p,
+                            scalar *d,
+                            scalar *q,
+                            scalar *P[null],
+                            scalar *D[null],
+                            scalar *Q[null])
+     /* Retrieve sarima parameters from overall parameter matrix. */
+
+     scalar p = parameter_matrix[1]
+     scalar d = parameter_matrix[2]
+     scalar q = parameter_matrix[3]
+     if data_has_seasonality()
+        scalar P = parameter_matrix[4]
+        scalar D = parameter_matrix[5]
+        scalar Q = parameter_matrix[6]
+     endif
+ end function
+
+
+function void estimate_models (bundle *self)
+    /* Estimate SARIMAX models for all parameter combinations. */
+
+    series y = self.y
+    list xlist = self.xlist
+
+    matrix self.criteria_values = mshape(NA, rows(self.parameter_matrix), 3)
+    cnameset(self.criteria_values, "AIC BIC HQC")
+
+    # TODO: we need to restrict the data set to the least common sample to ensure that information criteria a comparable
+
+    loop i=1..rows(self.parameter_matrix)
+        self.criteria_values[i,] = arima_estimation(y, xlist, self, $i)
+    endloop
+    eval self.criteria_values
+    stop
+end function
+
+
+function matrix arima_estimation (const series y,
+                                  const list xlist,
+                                  const bundle self,
+                                  const int parameter_set_id[1::])
+    /* Actual estimation of SARIMAX model and computation of information criteria. */
+
+    string verbose_option
+    verbose_option = (self.verbose == 0) ? verbose_option : (self.verbose == 1 ? "--quiet" : "--verbose")
+    scalar p, d, q, P, D, Q
+
+    # TODO: Do we need these?
+    #string arima_option_string = self.arima_option_string
+    #string estimation_method = self.estimation_method
+    string arima_option_string
+    string estimation_method
+
+    get_parameters(self.parameter_matrix[parameter_set_id,], &p, &d, &q, &P, &D, &Q)
+
+    if data_has_seasonality()
+        catch arima p d q ; P D Q; y xlist @arima_option_string @estimation_method @verbose_option
+    else
+        catch arima p d q ; y xlist @arima_option_string @estimation_method @verbose_option
+    endif
+
+    if $error
+        if self.verbose
+            printWarning(sprintf("Failed to estimated SARIMAX(%d,%d,%d,%d,%d,%d) model.", p, d, q, P, D, Q))
+        endif
+        return mshape(NA, 1, 3)
+    else
+        return $aic ~ $bic ~ $hqc
+    endif
 end function
 
 
@@ -181,12 +255,14 @@ end function
 
 
 function scalar n_lags (const int min_lag[0::], const int max_lag[0::])
+    errorif(max_lag < min_lag, "Maximum lag cannot be lower than minimum lag.")
     return 1 + max_lag - min_lag
 end function
 
 
 function matrix sarima_parameter_matrix (const bundle self)
     /* Prepare the parameter combindations for SARIMA. */
+
 
     scalar k = 6        # p, d, q, P, D, Q
     scalar n_p = n_lags(self.min_p, self.max_p)
@@ -198,30 +274,49 @@ function matrix sarima_parameter_matrix (const bundle self)
 
     scalar n_rows = n_p * n_d * n_q * n_P * n_D * n_Q
     matrix combs = mshape(NA, n_rows, k)
+    scalar repeat = 1
 
     # start with Q (the rightest variable)
     matrix m = ones(n_Q, (n_rows/n_Q)) .* seq(self.min_Q, self.max_Q)'
     combs[,6] = vec(m)
 
-    matrix m = ones(n_D, n_Q) .* seq(self.min_D, self.max_D)'
+    repeat *= n_Q
+    matrix m = ones(n_D, repeat) .* seq(self.min_D, self.max_D)'
     m = vec(m')
-    scalar factor = n_P * n_q * n_d * n_p
+    scalar factor = n_p * n_d * n_q * n_P
     combs[,5] = vec(m .* ones(rows(m), factor))
 
-
-*** HIER WEITERMACHEN ***
-    matrix m = ones(n_P, n_D) .* seq(self.min_P, self.max_P)'
+    repeat *= n_D
+    matrix m = ones(n_P, repeat) .* seq(self.min_P, self.max_P)'
     m = vec(m')
-    scalar factor = n_q * n_d * n_p
+    scalar factor = n_p * n_d * n_q
     combs[,4] = vec(m .* ones(rows(m), factor))
 
+    repeat *= n_P
+    matrix m = ones(n_q, repeat) .* seq(self.min_q, self.max_q)'
+    m = vec(m')
+    scalar factor = n_p * n_d
+    combs[,3] = vec(m .* ones(rows(m), factor))
 
-    matrix m = ones(n_p, n_q * n_d) .* seq(self.min_p, self.max_p)'
+    repeat *= n_q
+    matrix m = ones(n_d, repeat) .* seq(self.min_d, self.max_d)'
+    m = vec(m')
+    scalar factor = n_p
+    combs[,2] = vec(m .* ones(rows(m), factor))
+
+    repeat *= n_d
+    matrix m = ones(n_p, repeat) .* seq(self.min_p, self.max_p)'
+    m = vec(m')
     combs[,1] = vec(m')
 
     return combs
 end function
 
+/*
+function scalar update_repeat (const int repeat, const int multiply_by)
+    return repeat * multiply_by
+end function
+*/
 
 function matrix arima_parameter_matrix (const bundle self)
     /* Prepare the parameter combindations for ARIMA. */
@@ -233,16 +328,19 @@ function matrix arima_parameter_matrix (const bundle self)
 
     scalar n_rows = n_p * n_d * n_q
     matrix combs = mshape(NA, n_rows, k)
+    scalar repeat = 1
 
     # start with q (the rightest variable)
     matrix m = ones(n_q, (n_rows/n_q)) .* seq(self.min_q, self.max_q)'
     combs[,3] = vec(m)
 
-    matrix m = ones(n_d, n_q) .* seq(self.min_d, self.max_d)'
+    repeat *= n_q
+    matrix m = ones(n_d, repeat) .* seq(self.min_d, self.max_d)'
     m = vec(m')
     combs[,2] = vec(m .* ones(rows(m), n_p))
 
-    matrix m = ones(n_p, n_q * n_d) .* seq(self.min_p, self.max_p)'
+    repeat *= n_d
+    matrix m = ones(n_p, repeat) .* seq(self.min_p, self.max_p)'
     combs[,1] = vec(m')
 
     return combs
