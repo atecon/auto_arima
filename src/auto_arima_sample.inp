@@ -20,5 +20,5 @@ endif
 
 list xlist = null
 #series y = 0
-bundle Bout = auto_arima(y)
+bundle Bout = auto_arima(y, , defbundle("verbose", 1))
 Bout
