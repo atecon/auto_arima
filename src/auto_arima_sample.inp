@@ -19,6 +19,20 @@ elif EXAMPLE == 2
 endif
 
 list xlist = null
-#series y = 0
+
+# Run several ARIMA models
 bundle Bout = auto_arima(y, , defbundle("verbose", 1))
-Bout
+print Bout              # print stuff in resulting bundle
+
+# TODO: Print summary of results for all info-crit
+print_auto_arima_results(Bout)
+
+# Print coefficient vector of the n-th best model using the AIC
+matrix arima_params = get_auto_arima_parameters(Bout, "aic", 1)
+print arima_params
+
+# Retrieve the gretl command for estimating the n-th best model according to BIC
+string arima_cmd = get_auto_arima_command(Bout, "bic", 3)
+arima_cmd
+# Execute actual estimation
+@arima_cmd
