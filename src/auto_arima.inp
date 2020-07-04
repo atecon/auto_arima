@@ -188,12 +188,53 @@ function matrix get_auto_arima_parameters (const bundle self,
 end function
 
 
+function void print_summary_header (void)
+   /* Header printed print_auto_arima_results() is called. */
+
+    strings criteria_names = get_info_criteria_names()
+    printf "\n\np|d|q"
+    if data_has_seasonality()
+       printf " \t P|D|Q\t  "
+    endif
+    loop foreach i criteria_names
+        # TODO: add asterisks for the 3 best combinations for each criteria
+        printf "$i\t    "
+    endloop
+    printf "\n\n"
+end function
+
+
+function void print_summary_values (const bundle self)
+    /* Print actual summary values. */
+
+    loop j=1..rows(self.parameter_matrix)
+
+        printf "%d|%d|%d", self.parameter_matrix[j,1], self.parameter_matrix[j,2], self.parameter_matrix[j,3]
+
+        if data_has_seasonality()
+            printf " \t %d|%d|%d", self.parameter_matrix[j,4], self.parameter_matrix[j,5], self.parameter_matrix[j,6]
+        endif
+
+        printf " %10.3f %10.3f %10.3f\n", self.criteria_values[j,1], self.criteria_values[j,2], self.criteria_values[j,3]
+    endloop
+end function
+
+function void print_summary_intro (const bundle self)
+    printf "\n*******************************************************************\n"
+    printf "Summary results of ARIMA model combinations\n"
+    print "The asterisks below indicate the best (that is, minimized) values of the"
+    print "respective information criteria, AIC = Akaike criterion, BIC = Schwarz"
+    print "Bayesian criterion and HQC = Hannan-Quinn criterion."
+    printf "Common sample: %s to %s", self.sample_start, self.sample_end
+end function
+
 function void print_auto_arima_results (const bundle self)
     /* Summarize parameter results for each information criteria. */
 
-
- print "PASS"
-
+    print_summary_intro(self)
+   print_summary_header()
+   print_summary_values(self)
+   printf "\n*******************************************************************\n\n"
 end function
 
 
@@ -263,6 +304,8 @@ function void estimate_models (bundle *self)
     # TODO:is this offset computation correct?
     scalar offset = max(self.parameter_matrix)
     smpl +offset ;
+    string self.sample_start = obslabel($t1)
+    string self.sample_end = obslabel($t2)
 
     loop i=1..rows(self.parameter_matrix)
         self.criteria_values[i,] = arima_estimation_get_info_crits(y, xlist, self, $i)
