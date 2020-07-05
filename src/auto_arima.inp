@@ -1,15 +1,16 @@
-function void y_has_zero_values (bundle *self)
+function void y_is_zero (bundle *self)
     /* Check whether y includes only zero values.
     return: 0 if not zero or negative values, otherwise 1. */
 
     series y = self.y
     smpl y --no-missing
 
-    if self.verbose > 0 && (sum(y == 0) > 0) ? TRUE : FALSE
-        printWarning(sprintf("Endogenous '%s' includes only zero values", self.name_yseries))
+    if sum(y == 0) == $nobs
+        if self.verbose > 0
+            printError(sprintf("Endogenous '%s' includes only zero values.", self.name_yseries))
+        endif
         self.error = TRUE
     endif
-
 end function
 
 
@@ -28,7 +29,7 @@ end function
 function void do_initial_checks (bundle *self)
     /* Perform initial checks and drop optionally intercept. */
 
-    y_has_zero_values(&self)
+    y_is_zero(&self)
     drop_intercept_from_xlist(&self)
 end function
 
