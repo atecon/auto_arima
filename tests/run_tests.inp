@@ -6,6 +6,222 @@ include assertion.gfn
 include "./src/auto_arima.inp" --force
 
 
+open denmark.gdt -q -p
+function void test_default_values (const series y)
+    print "Start testing default_values()"
+    print "Start testing seasonal ARIMA parameter"
+
+    bundle B = default_values(y)
+
+    assert_equal_num(B.min_d, 1)
+    assert_equal_num(B.max_d, 1)
+    assert_equal_num(B.min_p, 0)
+    assert_equal_num(B.max_p, 1)
+    assert_equal_num(B.min_q, 1)
+    assert_equal_num(B.max_q, 1)
+
+    assert_equal_num(B.min_D, 1)
+    assert_equal_num(B.max_D, 1)
+    assert_equal_num(B.min_P, 0)
+    assert_equal_num(B.max_P, 1)
+    assert_equal_num(B.min_Q, 0)
+    assert_equal_num(B.max_Q, 1)
+
+    assert_true(B.seasonal)
+end function
+test_default_values(LRM)
+
+open nile.gdt -q -p
+function void test_default_values (const series y)
+    print "Start testing default_values()"
+    print "Start testing non-seasonal ARIMA parameter"
+
+    bundle B = default_values(y)
+
+    assert_equal_num(B.min_d, 1)
+    assert_equal_num(B.max_d, 1)
+    assert_equal_num(B.min_p, 0)
+    assert_equal_num(B.max_p, 1)
+    assert_equal_num(B.min_q, 1)
+    assert_equal_num(B.max_q, 1)
+
+    assert_false(inbundle(B, min_D))
+    assert_false(inbundle(B, max_D))
+    assert_false(inbundle(B, min_P))
+    assert_false(inbundle(B, max_P))
+    assert_false(inbundle(B, min_Q))
+    assert_false(inbundle(B, max_Q))
+
+    assert_false(B.seasonal)
+end function
+test_default_values(nile)
+
+
+open nile.gdt -q -p
+function void test_y_is_const (const series y)
+    print "Start testing y_is_const()"
+
+    bundle B = null
+    series B.y = y
+    scalar B.verbose = TRUE
+    scalar B.error = FALSE
+    string B.name_yseries = "nile"
+
+    y_is_const(&B)
+    assert_false(B.error)
+
+    series c = 1
+    series B.y = c
+    string B.name_yseries = "c"
+    y_is_const(&B)
+    assert_true(B.error)
+end function
+test_y_is_const(nile)
+
+
+
+open nile.gdt -q -p
+function void test_drop_intercept_from_xlist (const series y)
+    print "Start testing drop_intercept_from_xlist()"
+
+    bundle B = null
+    series B.y = y
+    scalar B.verbose = TRUE
+    scalar B.intercept = TRUE
+    list B.xlist = null
+
+    # empty xlist + intercept = TRUE
+    drop_intercept_from_xlist(&B)
+    list xlist = B.xlist
+    assert_false(inlist(xlist, "const"))
+
+    # empty xlist + intercept = FALSE
+    scalar B.intercept = FALSE
+    drop_intercept_from_xlist(&B)
+    list xlist = B.xlist
+    assert_false(inlist(xlist, "const"))
+
+    # xlist + intercept = TRUE
+    series x = normal()
+    list B.xlist = x
+    scalar B.intercept = TRUE
+    drop_intercept_from_xlist(&B)
+    list xlist = B.xlist
+    assert_false(inlist(xlist, "const"))
+
+    # xlist + intercept = FALSE
+    series x = normal()
+    list B.xlist = x
+    scalar B.intercept = FALSE
+    drop_intercept_from_xlist(&B)
+    list xlist = B.xlist
+    assert_false(inlist(xlist, "const"))
+
+    # const + intercept = FALSE
+    series const = 1
+    list B.xlist = const
+    scalar B.intercept = FALSE
+    drop_intercept_from_xlist(&B)
+    list xlist = B.xlist
+    assert_false(inlist(xlist, "const"))
+
+    # const + intercept = TRUE
+    series const = 1
+    list B.xlist = const
+    scalar B.intercept = TRUE
+    drop_intercept_from_xlist(&B)
+    list xlist = B.xlist
+    assert_true(inlist(xlist, "const"))
+end function
+test_drop_intercept_from_xlist(nile)
+
+
+function void test_prepare_arima_options (void)
+    print "Start testing prepare_arima_options_string()"
+
+    bundle B = null
+    scalar B.intercept = TRUE
+    string B.estimation_method = ""
+    prepare_arima_options_string(&B)
+    assert_equal_str(B.arima_model_options_string, "")
+
+    bundle B = null
+    scalar B.intercept = FALSE
+    string B.estimation_method = ""
+    prepare_arima_options_string(&B)
+    assert_equal_str(strstrip(B.arima_model_options_string), "--nc")
+
+    bundle B = null
+    scalar B.intercept = FALSE
+    string B.estimation_method = "conditional_ml"
+    prepare_arima_options_string(&B)
+    assert_equal_str(strstrip(B.arima_model_options_string),\
+        "--nc --conditional")
+
+end function
+test_prepare_arima_options()
+
+
+open nile.gdt -q -p
+function void test_get_parameter_names (const series y)
+    print "Start testing get_parameter_names()"
+    print "Non-seasonal case"
+
+    strings S = get_parameter_names()
+
+    assert_true(instrings(S, "p")[1])
+    assert_true(instrings(S, "q")[1])
+    assert_true(instrings(S, "d")[1])
+
+    assert_false(nelem(instrings(S, "P")))
+    assert_false(nelem(instrings(S, "Q")))
+    assert_false(nelem(instrings(S, "D")))
+end function
+test_get_parameter_names(nile)
+
+
+open denmark.gdt -q -p
+function void test_get_parameter_names (const series y)
+    print "Start testing get_parameter_names()"
+    print "Seasonal case"
+
+    strings S = get_parameter_names()
+
+    assert_true(instrings(S, "p")[1])
+    assert_true(instrings(S, "q")[1])
+    assert_true(instrings(S, "d")[1])
+
+    assert_true(instrings(S, "P")[1])
+    assert_true(instrings(S, "Q")[1])
+    assert_true(instrings(S, "D")[1])
+
+end function
+test_get_parameter_names(LRM)
+
+
+open nile.gdt -q -p
+function void test_n_combinations (const series y)
+    print "Start testing n_combinations()"
+    print "Non-seasonal case"
+
+    bundle B = default_values(y)
+    scalar n = n_combinations(B)
+    assert_equal_num(n, 2)
+end function
+test_n_combinations(nile)
+
+open denmark.gdt -q -p
+function void test_n_combinations (const series y)
+    print "Start testing n_combinations()"
+    print "Seasonal case"
+
+    bundle B = default_values(y)
+    scalar n = n_combinations(B)
+    assert_equal_num(n, 8)
+end function
+test_n_combinations(LRM)
+
+
 function void test_n_lags (void)
     print "Start testing n_lags()"
 
@@ -14,6 +230,20 @@ function void test_n_lags (void)
     catch assert_false(n_lags(1, 0))
 end function
 test_n_lags()
+
+
+function void test_get_info_criteria_names (void)
+    print "Start testing get_info_criteria_names()"
+
+    strings S = get_info_criteria_names()
+
+    assert_equal_num(nelem(S), 3)
+
+    assert_true(instrings(S, "aic"))
+    assert_true(instrings(S, "bic"))
+    assert_true(instrings(S, "hqc"))
+end function
+test_get_info_criteria_names()
 
 
 function void test_arima_parameter_matrix (void)
@@ -136,49 +366,163 @@ function void test_sarima_parameter_matrix (void)
 end function
 test_sarima_parameter_matrix()
 
+function void test_final_model_options_string (void)
+    print "Start testing final_model_options_string()"
+
+    bundle B = null
+    scalar B.verbose = 0
+    string B.arima_model_options_string = "some_string"
+    string r = final_model_options_string(B)
+    assert_equal_str(strstrip(r), "some_string")
+
+    bundle B = null
+    scalar B.verbose = 1
+    string B.arima_model_options_string = "some_string"
+    string r = final_model_options_string(B)
+    assert_equal_str(strstrip(r), "--quiet")
+
+    bundle B = null
+    scalar B.verbose = 2
+    string B.arima_model_options_string = "some_string"
+    string r = final_model_options_string(B)
+    assert_equal_str(strstrip(r), "--verbose")
+end function
+test_final_model_options_string()
 
 
+function void test_estimate_models (void)
+    print "Start testing estimate_models()"
+
+    strings S = get_info_criteria_names()
+
+    assert_equal_num(nelem(S), 3)
+
+    assert_true(instrings(S, "aic"))
+    assert_true(instrings(S, "bic"))
+    assert_true(instrings(S, "hqc"))
+end function
+test_estimate_models()
 
 
+open nile.gdt -p -q
+function void test_get_parameters (const series y)
+    print "Start testing get_parameters()"
+    print "Non-seasonal data"
+
+    scalar p, d, q
+
+    matrix m = {1, 2, 3}
+
+    get_parameters(m, &p, &d, &q)
+
+    assert_equal_num(p, 1)
+    assert_equal_num(d, 2)
+    assert_equal_num(q, 3)
+end function
+test_get_parameters(nile)
 
 
+open denmark.gdt -p -q
+function void test_get_parameters (const series y)
+    print "Start testing get_parameters()"
+    print "Seasonal data"
+
+    scalar p, d, q, P, D, Q
+
+    matrix m = {1, 2, 3, 4, 5, 6}
+
+    get_parameters(m, &p, &d, &q, &P, &D, &Q)
+
+    assert_equal_num(p, 1)
+    assert_equal_num(d, 2)
+    assert_equal_num(q, 3)
+    assert_equal_num(P, 4)
+    assert_equal_num(D, 5)
+    assert_equal_num(Q, 6)
+end function
+test_get_parameters(LRM)
+
+function void test_asterisks (void)
+    print "Start testing asterisks()"
+
+    string s1 = asterisks(1)
+    string s2 = asterisks(2)
+    string s3 = asterisks(3)
+
+    assert_equal_str(s1, "***")
+    assert_equal_str(s2, "**")
+    assert_equal_str(s3, "*")
+end function
+test_asterisks()
 
 
+#==========================
+function void test_row_labels (void)
+    print "Start testing row_labels()"
+
+    print "pass"
+end function
+test_row_labels()
 
 
+function void test_get_auto_arima_parameters (void)
+    print "Start testing get_auto_arima_parameters()"
+
+    print "pass"
+end function
+test_get_auto_arima_parameters()
 
 
+function void test_rank_models_by_criteria (void)
+    print "Start testing rank_models_by_criteria()"
+
+    print "pass"
+end function
+test_rank_models_by_criteria()
 
 
+function void test_get_auto_arima_command (void)
+    print "Start testing get_auto_arima_command()"
+
+    print "pass"
+end function
+test_get_auto_arima_command()
 
 
+function void test_print_table_border (void)
+    print "Start testing print_table_border()"
 
+    print "pass"
+end function
+test_print_table_border()
 
+function void test_print_summary_intro (void)
+    print "Start testing print_summary_intro()"
 
+    print "pass"
+end function
+test_print_summary_intro()
 
+function void test_print_table_header (void)
+    print "Start testing print_table_header()"
 
+    print "pass"
+end function
+test_print_table_header()
 
+function void test_print_table_and_row_labels (void)
+    print "Start testing print_table_and_row_labels()"
 
+    print "pass"
+end function
+test_print_table_and_row_labels()
 
+function void test_estimation_method_support (void)
+    print "Start testing estimation_method_supported()"
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    print "pass"
+end function
+test_estimation_method_support()
 
 
 

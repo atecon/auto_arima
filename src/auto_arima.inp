@@ -1,13 +1,12 @@
-function void y_is_zero (bundle *self)
-    /* Check whether y includes only zero values.
-    return: 0 if not zero or negative values, otherwise 1. */
+function void y_is_const (bundle *self)
+    /* Check whether y is constanr.
+    return: 1 if TRUE, otherwise 0. */
 
     series y = self.y
-    smpl y --no-missing
 
-    if sum(y == 0) == $nobs
+    if isconst(y) == TRUE
         if self.verbose > 0
-            printError(sprintf("Endogenous '%s' includes only zero values.", self.name_yseries))
+            printError(sprintf("Endogenous series '%s' is constant..", self.name_yseries))
         endif
         self.error = TRUE
     endif
@@ -29,7 +28,7 @@ end function
 function void do_initial_checks (bundle *self)
     /* Perform initial checks and drop optionally intercept. */
 
-    y_is_zero(&self)
+    y_is_const(&self)
     drop_intercept_from_xlist(&self)
 end function
 
@@ -41,7 +40,7 @@ end function
 
 
 function bundle set_bundle_and_get_defaults (const series y,
-                                        bundle opts[null])
+                                            bundle opts[null])
     /* Compile self bundle by merging eventual information
     from opts-bundle. */
 
@@ -190,7 +189,7 @@ end function
 
 
 function strings row_labels (const bundle self)
-    /* COmpile row lables for summary table. */
+    /* Compile row lables for summary table. */
 
     strings row_labels = array(rows(self.parameter_matrix))
 
@@ -335,7 +334,7 @@ function void estimate_models (bundle *self)
     series y = self.y
     list xlist = self.xlist
     matrix self.criteria_values = mshape(NA, rows(self.parameter_matrix), 3)
-    cnameset(self.criteria_values, "AIC BIC HQC")
+    cnameset(self.criteria_values, get_info_criteria_names())
 
     # Restrict the data set to the least common sample to ensure that information criteria a comparable
     # TODO:is this offset computation correct?
@@ -350,16 +349,24 @@ function void estimate_models (bundle *self)
 end function
 
 
+function string final_model_options_string (const bundle self)
+    /* code description
+    return: type, description */
+
+    return (self.verbose == 0) ? self.arima_model_options_string : (self.verbose == 1 ? "--quiet" : "--verbose")
+end function
+
+
 function matrix arima_estimation_get_info_crits (const series y,
                                                 const list xlist,
                                                 const bundle self,
                                                 const int parameter_set_id[1::])
     /* Actual estimation of SARIMAX model and computation of information criteria. */
 
-    string arima_model_options_string = self.arima_model_options_string
-    arima_model_options_string += (self.verbose == 0) ? self.arima_model_options_string : (self.verbose == 1 ? "--quiet" : "--verbose")
+    string arima_model_options_string = final_model_options_string(self)
     scalar p, d, q, P, D, Q
     matrix crits = mshape(NA, 1, nelem(get_info_criteria_names()))
+    strings criteria = get_info_criteria_names()
 
     get_parameters(self.parameter_matrix[parameter_set_id,], &p, &d, &q, &P, &D, &Q)
 
@@ -369,12 +376,9 @@ function matrix arima_estimation_get_info_crits (const series y,
         catch arima p d q ; y xlist @arima_model_options_string
     endif
 
-    if $error
-        if self.verbose
-            printWarning(sprintf("Failed to estimated SARIMAX(%d,%d,%d,%d,%d,%d) model. Ignored.", p, d, q, P, D, Q))
-        endif
+    if $error && self.verbose
+        printWarning(sprintf("Failed to estimated SARIMAX(%d,%d,%d,%d,%d,%d) model. Ignored.", p, d, q, P, D, Q))
     else
-        strings criteria = get_info_criteria_names()
         loop foreach i criteria
             string crit = sprintf("$%s", criteria[i])
             crits[i] = @crit
@@ -498,7 +502,7 @@ function void prepare_arima_options_string (bundle *self)
     string arima_model_options_string = ""
 
     arima_model_options_string = (self.intercept == FALSE) ? "--nc " : arima_model_options_string
-    arima_model_options_string = (self.estimation_method == "conditional_ml") ? "--conditional" : arima_model_options_string
+    arima_model_options_string += (self.estimation_method == "conditional_ml") ? "--conditional" : ""
 
     self.arima_model_options_string = arima_model_options_string
 end function
@@ -516,7 +520,6 @@ function void drop_intercept_from_xlist (bundle *self)
 end function
 
 
-# TODO: test
 function scalar estimation_method_supported (const bundle self)
     /* */
 
