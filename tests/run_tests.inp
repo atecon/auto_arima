@@ -20,14 +20,14 @@ function void test_default_values (const series y)
     assert_equal_num(B.min_q, 1)
     assert_equal_num(B.max_q, 1)
 
-    assert_equal_num(B.min_D, 1)
+    assert_equal_num(B.min_D, 0)
     assert_equal_num(B.max_D, 1)
     assert_equal_num(B.min_P, 0)
     assert_equal_num(B.max_P, 1)
     assert_equal_num(B.min_Q, 0)
     assert_equal_num(B.max_Q, 1)
 
-    assert_true(B.seasonal)
+    assert_true(B.with_seasonality)
 end function
 test_default_values(LRM)
 
@@ -45,21 +45,21 @@ function void test_default_values (const series y)
     assert_equal_num(B.min_q, 1)
     assert_equal_num(B.max_q, 1)
 
-    assert_false(inbundle(B, min_D))
-    assert_false(inbundle(B, max_D))
-    assert_false(inbundle(B, min_P))
-    assert_false(inbundle(B, max_P))
-    assert_false(inbundle(B, min_Q))
-    assert_false(inbundle(B, max_Q))
+    assert_equal_num(B.min_D, 0)
+    assert_equal_num(B.max_D, 0)
+    assert_equal_num(B.min_P, 0)
+    assert_equal_num(B.max_P, 0)
+    assert_equal_num(B.min_Q, 0)
+    assert_equal_num(B.max_Q, 0)
 
-    assert_false(B.seasonal)
+    assert_false(B.with_seasonality)
 end function
 test_default_values(nile)
 
 
 open nile.gdt -q -p
-function void test_y_is_const (const series y)
-    print "Start testing y_is_const()"
+function void test_y_is_constant (const series y)
+    print "Start testing y_is_constant()"
 
     bundle B = null
     series B.y = y
@@ -67,16 +67,16 @@ function void test_y_is_const (const series y)
     scalar B.error = FALSE
     string B.name_yseries = "nile"
 
-    y_is_const(&B)
+    y_is_constant(&B)
     assert_false(B.error)
 
     series c = 1
     series B.y = c
     string B.name_yseries = "c"
-    y_is_const(&B)
+    y_is_constant(&B)
     assert_true(B.error)
 end function
-test_y_is_const(nile)
+test_y_is_constant(nile)
 
 
 
@@ -87,7 +87,7 @@ function void test_drop_intercept_from_xlist (const series y)
     bundle B = null
     series B.y = y
     scalar B.verbose = TRUE
-    scalar B.intercept = TRUE
+    scalar B.with_intercept = TRUE
     list B.xlist = null
 
     # empty xlist + intercept = TRUE
@@ -96,7 +96,7 @@ function void test_drop_intercept_from_xlist (const series y)
     assert_false(inlist(xlist, "const"))
 
     # empty xlist + intercept = FALSE
-    scalar B.intercept = FALSE
+    scalar B.with_intercept = FALSE
     drop_intercept_from_xlist(&B)
     list xlist = B.xlist
     assert_false(inlist(xlist, "const"))
@@ -104,7 +104,7 @@ function void test_drop_intercept_from_xlist (const series y)
     # xlist + intercept = TRUE
     series x = normal()
     list B.xlist = x
-    scalar B.intercept = TRUE
+    scalar B.with_intercept = TRUE
     drop_intercept_from_xlist(&B)
     list xlist = B.xlist
     assert_false(inlist(xlist, "const"))
@@ -112,7 +112,7 @@ function void test_drop_intercept_from_xlist (const series y)
     # xlist + intercept = FALSE
     series x = normal()
     list B.xlist = x
-    scalar B.intercept = FALSE
+    scalar B.with_intercept = FALSE
     drop_intercept_from_xlist(&B)
     list xlist = B.xlist
     assert_false(inlist(xlist, "const"))
@@ -120,7 +120,7 @@ function void test_drop_intercept_from_xlist (const series y)
     # const + intercept = FALSE
     series const = 1
     list B.xlist = const
-    scalar B.intercept = FALSE
+    scalar B.with_intercept = FALSE
     drop_intercept_from_xlist(&B)
     list xlist = B.xlist
     assert_false(inlist(xlist, "const"))
@@ -128,7 +128,7 @@ function void test_drop_intercept_from_xlist (const series y)
     # const + intercept = TRUE
     series const = 1
     list B.xlist = const
-    scalar B.intercept = TRUE
+    scalar B.with_intercept = TRUE
     drop_intercept_from_xlist(&B)
     list xlist = B.xlist
     assert_true(inlist(xlist, "const"))
@@ -140,19 +140,19 @@ function void test_prepare_arima_options (void)
     print "Start testing prepare_arima_options_string()"
 
     bundle B = null
-    scalar B.intercept = TRUE
+    scalar B.with_intercept = TRUE
     string B.estimation_method = ""
     prepare_arima_options_string(&B)
     assert_equal_str(B.arima_model_options_string, "")
 
     bundle B = null
-    scalar B.intercept = FALSE
+    scalar B.with_intercept = FALSE
     string B.estimation_method = ""
     prepare_arima_options_string(&B)
     assert_equal_str(strstrip(B.arima_model_options_string), "--nc")
 
     bundle B = null
-    scalar B.intercept = FALSE
+    scalar B.with_intercept = FALSE
     string B.estimation_method = "conditional_ml"
     prepare_arima_options_string(&B)
     assert_equal_str(strstrip(B.arima_model_options_string),\
@@ -200,26 +200,27 @@ test_get_parameter_names(LRM)
 
 
 open nile.gdt -q -p
-function void test_n_combinations (const series y)
+function void test_add_n_combinations (const series y)
     print "Start testing n_combinations()"
     print "Non-seasonal case"
 
     bundle B = default_values(y)
-    scalar n = n_combinations(B)
-    assert_equal_num(n, 2)
+    add_n_combinations(&B)
+    assert_equal_num(B.n_combinations, 2)
 end function
-test_n_combinations(nile)
+test_add_n_combinations(nile)
+
 
 open denmark.gdt -q -p
-function void test_n_combinations (const series y)
+function void test_add_n_combinations (const series y)
     print "Start testing n_combinations()"
     print "Seasonal case"
 
     bundle B = default_values(y)
-    scalar n = n_combinations(B)
-    assert_equal_num(n, 8)
+    add_n_combinations(&B)
+    assert_equal_num(B.n_combinations, 16)
 end function
-test_n_combinations(LRM)
+test_add_n_combinations(LRM)
 
 
 function void test_n_lags (void)
@@ -244,55 +245,6 @@ function void test_get_info_criteria_names (void)
     assert_true(instrings(S, "hqc"))
 end function
 test_get_info_criteria_names()
-
-
-function void test_arima_parameter_matrix (void)
-    print "Start testing arima_parameter_matrix()."
-
-    bundle B
-    scalar B.min_p = 0
-    scalar B.max_p = 2
-    scalar B.min_d = 0
-    scalar B.max_d = 0
-    scalar B.min_q = 0
-    scalar B.max_q = 0
-
-    matrix params_actual =   {0, 0, 0; \
-                              1, 0, 0; \
-                              2, 0, 0}
-
-    matrix m = arima_parameter_matrix(B)
-    matrix d = m - params_actual
-    assert_equal_num(sum(d), 0)
-
-
-    bundle B = null
-    scalar B.min_p = 0
-    scalar B.max_p = 1
-    scalar B.min_d = 0
-    scalar B.max_d = 1
-    scalar B.min_q = 0
-    scalar B.max_q = 2
-
-    matrix params_actual =   {0, 0, 0; \
-                              0, 0, 1; \
-                              0, 0, 2; \
-                              0, 1, 0; \
-                              0, 1, 1; \
-                              0, 1, 2; \
-                              1, 0, 0; \
-                              1, 0, 1; \
-                              1, 0, 2; \
-                              1, 1, 0; \
-                              1, 1, 1; \
-                              1, 1, 2 }
-
-    matrix m = arima_parameter_matrix(B)
-    matrix d = m - params_actual
-    assert_equal_num(sum(d), 0)
-
-end function
-test_arima_parameter_matrix()
 
 
 function void test_sarima_parameter_matrix (void)
@@ -365,6 +317,75 @@ function void test_sarima_parameter_matrix (void)
     matrix m = sarima_parameter_matrix(B)
 end function
 test_sarima_parameter_matrix()
+
+
+# non-seasonal anual data set
+open hendry_jae.gdt -q -p
+function void test_arima_parameter_matrix (void)
+    /* For non-seasonal data, the arima parameter combination matrix
+    is actually compiled using the get_parameter matrix() function. */
+    print "Start testing arima_parameter_matrix()."
+
+    bundle B
+    scalar B.min_p = 0
+    scalar B.max_p = 2
+    scalar B.min_d = 0
+    scalar B.max_d = 0
+    scalar B.min_q = 0
+    scalar B.max_q = 0
+    # set_default_values() sets the seasonal parameters to 0
+    scalar B.min_P = 0
+    scalar B.max_P = 0
+    scalar B.min_D = 0
+    scalar B.max_D = 0
+    scalar B.min_Q = 0
+    scalar B.max_Q = 0
+
+    matrix params_actual =   {0, 0, 0; \
+                              1, 0, 0; \
+                              2, 0, 0}
+
+    # retrieve the arima parameter matrix for non-seasonal data
+    matrix m = get_parameter_matrix(B)
+    matrix d = m - params_actual
+    assert_equal_num(sum(d), 0)
+
+
+    bundle B = null
+    scalar B.min_p = 0
+    scalar B.max_p = 1
+    scalar B.min_d = 0
+    scalar B.max_d = 1
+    scalar B.min_q = 0
+    scalar B.max_q = 2
+    # set_default_values() sets the seasonal parameters to 0
+    scalar B.min_P = 0
+    scalar B.max_P = 0
+    scalar B.min_D = 0
+    scalar B.max_D = 0
+    scalar B.min_Q = 0
+    scalar B.max_Q = 0
+
+    matrix params_actual =   {0, 0, 0; \
+                              0, 0, 1; \
+                              0, 0, 2; \
+                              0, 1, 0; \
+                              0, 1, 1; \
+                              0, 1, 2; \
+                              1, 0, 0; \
+                              1, 0, 1; \
+                              1, 0, 2; \
+                              1, 1, 0; \
+                              1, 1, 1; \
+                              1, 1, 2 }
+
+    matrix m = get_parameter_matrix(B)
+    matrix d = m - params_actual
+    assert_equal_num(sum(d), 0)
+
+end function
+test_arima_parameter_matrix()
+
 
 function void test_final_model_options_string (void)
     print "Start testing final_model_options_string()"
@@ -456,76 +477,305 @@ end function
 test_asterisks()
 
 
-#==========================
-function void test_row_labels (void)
-    print "Start testing row_labels()"
+open denmark.gdt -p -q
+list L = LRY IDE
+function void test_add_data_to_bundle (const series y,
+                                        const list L)
+    print "Start testing add_data_to_bundle()"
 
-    print "pass"
+    bundle B = null
+    add_data_to_bundle(&B, y)
+
+    assert_equal_str(B.name_yseries, "y")
+    assert_equal_str(B.name_xlist, "")
+    assert_equal_num(nobs(B.y), 55)
+    assert_false(nelem(B.xlist))
+
+
+    bundle B = null
+    add_data_to_bundle(&B, y, L)
+
+    assert_equal_str(B.name_yseries, "y")
+    assert_equal_str(B.name_xlist, "L")
+    assert_equal_num(nobs(B.y), 55)
+    assert_equal_num(nelem(B.xlist), 2)
 end function
-test_row_labels()
+test_add_data_to_bundle(LRM, L)
 
 
-function void test_get_auto_arima_parameters (void)
-    print "Start testing get_auto_arima_parameters()"
+function void Tinitialize_criteria_values_mat (void)
+    print "Start testing initialize_criteria_values_mat()"
 
-    print "pass"
+
+    bundle B = defbundle("parameter_matrix", zeros(5,3))
+    matrix m = initialize_criteria_values_mat(B)
+    strings clabels = cnameget(m)
+
+    assert_equal_num(rows(m), rows(B.parameter_matrix))
+    assert_equal_num(cols(m), 3)
+
+    assert_true(clabels[1] == "aic")
+    assert_true(clabels[2] == "bic")
+    assert_true(clabels[3] == "hqc")
 end function
-test_get_auto_arima_parameters()
+Tinitialize_criteria_values_mat()
 
 
 function void test_rank_models_by_criteria (void)
     print "Start testing rank_models_by_criteria()"
 
-    print "pass"
+    bundle B = null
+    scalar B.n_combinations = 3
+    matrix B.parameter_matrix = zeros(3,3)
+    matrix B.criteria_values = { -1, -3, -2; \
+                                 -2, -1, -3; \
+                                 -3, -2, -1}
+
+    rank_models_by_criteria(&B)
+    matrix aic = B.model_rank_by_criteria[,1]
+    matrix bic = B.model_rank_by_criteria[,2]
+    matrix hqc = B.model_rank_by_criteria[,3]
+
+    assert_equal_num(aic[1], 3)
+    assert_equal_num(aic[2], 2)
+    assert_equal_num(aic[3], 1)
+
+    assert_equal_num(bic[1], 1)
+    assert_equal_num(bic[2], 3)
+    assert_equal_num(bic[3], 2)
+
+    assert_equal_num(hqc[1], 2)
+    assert_equal_num(hqc[2], 1)
+    assert_equal_num(hqc[3], 3)
 end function
 test_rank_models_by_criteria()
 
 
+open nile.gdt -p -q
+function void test_get_auto_arima_parameters (void)
+    print "Start testing get_auto_arima_parameters()"
+    print "Non-seasonal data"
+
+    bundle B = null
+    scalar B.n_combinations = 3
+    matrix B.parameter_matrix = { 0, 0, 1; \
+                                  0, 1, 1; \
+                                  2, 1, 3}
+
+    matrix B.model_rank_by_criteria = {3, 1, 2;\
+                                       2, 3, 1;\
+                                       1, 2, 3}
+
+
+    matrix m = get_auto_arima_parameters(B, "aic", 1)
+    assert_equal_num(m[1], 2)
+    assert_equal_num(m[2], 1)
+    assert_equal_num(m[3], 3)
+
+    matrix m = get_auto_arima_parameters(B, "bic", 3)
+    assert_equal_num(m[1], 0)
+    assert_equal_num(m[2], 1)
+    assert_equal_num(m[3], 1)
+
+    matrix m = get_auto_arima_parameters(B, "hqc", 2)
+    assert_equal_num(m[1], 0)
+    assert_equal_num(m[2], 0)
+    assert_equal_num(m[3], 1)
+
+    # Should fail -- here we should see some error msg.
+    catch get_auto_arima_parameters(B, "foo", 2)
+    catch get_auto_arima_parameters(B, "aic", 1)
+    catch get_auto_arima_parameters(B, "aic", 5)
+end function
+test_get_auto_arima_parameters()
+
+
+open denmark.gdt -p -q
+function void test_get_auto_arima_params_seas (void)
+    print "Start testing get_auto_arima_parameters()"
+    print "Seasonal data"
+
+    bundle B = null
+    scalar B.n_combinations = 3
+    matrix B.parameter_matrix = { 0, 0, 1, 1, 1, 1; \
+                                  0, 1, 1, 1, 1, 1; \
+                                  2, 1, 3, 1, 1, 1}
+
+    matrix B.model_rank_by_criteria = {3, 1, 2;\
+                                       2, 3, 1;\
+                                       1, 2, 3}
+
+    matrix m = get_auto_arima_parameters(B, "aic", 1)
+    assert_equal_num(m[1], 2)
+    assert_equal_num(m[2], 1)
+    assert_equal_num(m[3], 3)
+    assert_equal_num(m[4], 1)
+    assert_equal_num(m[5], 1)
+    assert_equal_num(m[6], 1)
+
+    matrix m = get_auto_arima_parameters(B, "bic", 3)
+    assert_equal_num(m[1], 0)
+    assert_equal_num(m[2], 1)
+    assert_equal_num(m[3], 1)
+    assert_equal_num(m[4], 1)
+    assert_equal_num(m[5], 1)
+    assert_equal_num(m[6], 1)
+
+    matrix m = get_auto_arima_parameters(B, "hqc", 2)
+    assert_equal_num(m[1], 0)
+    assert_equal_num(m[2], 0)
+    assert_equal_num(m[3], 1)
+    assert_equal_num(m[4], 1)
+    assert_equal_num(m[5], 1)
+    assert_equal_num(m[6], 1)
+
+    # Should fail -- here we should see some error msg.
+    catch get_auto_arima_parameters(B, "foo", 2)
+    catch get_auto_arima_parameters(B, "aic", 1)
+    catch get_auto_arima_parameters(B, "aic", 5)
+end function
+test_get_auto_arima_params_seas()
+
+
+open denmark.gdt -p -q
+function void test_get_auto_arima_command_sea (void)
+    print "Start testing get_auto_arima_command()"
+    print "Seasonal data"
+
+    bundle B = null
+    string B.name_yseries = "foo_series"
+    string B.name_xlist = "L"
+    string B.arima_model_options_string = "--some_options"
+    scalar B.n_combinations = 3
+    matrix B.parameter_matrix = { 0, 0, 1, 1, 1, 1; \
+                                  0, 1, 1, 1, 1, 1; \
+                                  2, 1, 3, 1, 1, 1}
+
+    matrix B.model_rank_by_criteria = {3, 1, 2;\
+                                       2, 3, 1;\
+                                       1, 2, 3}
+
+    string cmd = get_auto_arima_command(B, "aic", 1)
+    assert_equal_str(cmd, "arima 2 1 3 ; 1 1 1 ; foo_series L --some_options")
+
+    string cmd = get_auto_arima_command(B, "bic", 2)
+    assert_equal_str(cmd, "arima 2 1 3 ; 1 1 1 ; foo_series L --some_options")
+end function
+test_get_auto_arima_command_sea()
+
+
+open nile.gdt -p -q
 function void test_get_auto_arima_command (void)
     print "Start testing get_auto_arima_command()"
+    print "Non-seasonal data"
 
-    print "pass"
+    bundle B = null
+    string B.name_yseries = "foo_series"
+    string B.name_xlist = "L"
+    string B.arima_model_options_string = "--some_options"
+    scalar B.n_combinations = 3
+        matrix B.parameter_matrix = { 0, 0, 1; \
+                                      0, 1, 1; \
+                                      2, 1, 3}
+
+    matrix B.model_rank_by_criteria = {3, 1, 2;\
+                                       2, 3, 1;\
+                                       1, 2, 3}
+
+    string cmd = get_auto_arima_command(B, "aic", 1)
+    assert_equal_str(cmd, "arima 2 1 3 ; foo_series L --some_options")
+
+    string cmd = get_auto_arima_command(B, "bic", 2)
+    assert_equal_str(cmd, "arima 2 1 3 ; foo_series L --some_options")
 end function
 test_get_auto_arima_command()
+
+
+open nile.gdt -q -p
+function void test_row_labels (void)
+    print "Start testing row_labels()"
+    print "Non-seasonal case."
+
+    bundle B = null
+    scalar B.n_combinations = 3
+    matrix B.parameter_matrix = { 0, 0, 1; \
+                                  0, 1, 1; \
+                                  2, 1, 3}
+
+    strings rlabels = row_labels(B)
+
+    assert_equal_str(strstrip(rlabels[1]), "0|0|1")
+    assert_equal_str(strstrip(rlabels[2]), "0|1|1")
+    assert_equal_str(strstrip(rlabels[3]), "2|1|3")
+end function
+test_row_labels()
+
+open denmark.gdt -q -p
+function void test_row_labels_season (void)
+    print "Start testing row_labels()"
+    print "Seasonal case."
+
+    bundle B = null
+    scalar B.n_combinations = 3
+    matrix B.parameter_matrix = { 0, 0, 1, 1, 1, 1; \
+                                  0, 1, 1, 1, 1, 1; \
+                                  2, 1, 3, 1, 1, 1}
+
+    strings rlabels = row_labels(B)
+
+    assert_equal_str(strstrip(rlabels[1]), "0|0|1 |1|1|1")
+    assert_equal_str(strstrip(rlabels[2]), "0|1|1 |1|1|1")
+    assert_equal_str(strstrip(rlabels[3]), "2|1|3 |1|1|1")
+end function
+test_row_labels_season()
 
 
 function void test_print_table_border (void)
     print "Start testing print_table_border()"
 
-    print "pass"
+    print_table_border()
 end function
 test_print_table_border()
+
 
 function void test_print_summary_intro (void)
     print "Start testing print_summary_intro()"
 
-    print "pass"
+    bundle B = null
+    string B.sample_start = "2020-01-01"
+    string B.sample_end = "2020-07-31"
+
+    print_summary_intro(B)
 end function
 test_print_summary_intro()
+
 
 function void test_print_table_header (void)
     print "Start testing print_table_header()"
 
-    print "pass"
+    print_table_header()
 end function
 test_print_table_header()
 
+
+/*
+function void test_estimation_method_support (void)
+    print "Start testing estimation_method_supported()"
+
+    bundle
+end function
+test_estimation_method_support()
+*/
+
+
+/*
 function void test_print_table_and_row_labels (void)
     print "Start testing print_table_and_row_labels()"
 
     print "pass"
 end function
 test_print_table_and_row_labels()
-
-function void test_estimation_method_support (void)
-    print "Start testing estimation_method_supported()"
-
-    print "pass"
-end function
-test_estimation_method_support()
-
-
-
+*/
 
 
 

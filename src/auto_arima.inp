@@ -1,6 +1,5 @@
-function void y_is_const (bundle *self)
-    /* Check whether y is constanr.
-    return: 1 if TRUE, otherwise 0. */
+function void y_is_constant (bundle *self)
+    /* Check whether y is constant. Set self.error as TRUE of y is constant.*/
 
     series y = self.y
 
@@ -16,7 +15,7 @@ end function
 function void add_intercept_to_xlist (bundle *self)
     /* Add intercept to xlist if it should enter the model. */
 
-    if !inlist(self.xlist, "const") && self.intercept == TRUE
+    if !inlist(self.xlist, "const") && self.with_intercept == TRUE
         if self.verbose == 1
             printInfo("Intercept added to xlist as you set intercept == TRUE")
         endif
@@ -28,7 +27,7 @@ end function
 function void do_initial_checks (bundle *self)
     /* Perform initial checks and drop optionally intercept. */
 
-    y_is_const(&self)
+    y_is_constant(&self)
     drop_intercept_from_xlist(&self)
 end function
 
@@ -42,7 +41,7 @@ end function
 function bundle set_bundle_and_get_defaults (const series y,
                                             bundle opts[null])
     /* Compile self bundle by merging eventual information
-    from opts-bundle. */
+    from 'opts' bundle. */
 
     if !exists(opts)
         bundle opts = null
@@ -50,7 +49,6 @@ function bundle set_bundle_and_get_defaults (const series y,
 
     bundle self = default_values(y)
     self = opts + self			# override defaults
-    self.name_yseries = argname(y)
 
     return self
 end function
@@ -61,9 +59,9 @@ function bundle default_values (const series y)
 
     bundle self = null
     scalar self.error = FALSE
-    scalar self.y_is_always_zero = FALSE
-    scalar self.intercept = TRUE
-    scalar self.seasonal = data_has_seasonality()
+    scalar self.y_is_constant = FALSE
+    scalar self.with_intercept = TRUE
+    scalar self.with_seasonality = data_has_seasonality()
     scalar self.verbose = 1
     list self.xlist = null
 
@@ -80,14 +78,12 @@ function bundle default_values (const series y)
     scalar self.max_q = 1
 
     # seasonal arima parameters
-    if self.seasonal
-        scalar self.min_D = 1		# TODO: makes sense?
-        scalar self.max_D = 1
-        scalar self.min_P = 0
-        scalar self.max_P = 1
-        scalar self.min_Q = 0
-        scalar self.max_Q = 1
-    endif
+    scalar self.min_D = 0
+    scalar self.max_D = (self.with_seasonality == TRUE) ? 1 : 0
+    scalar self.min_P = 0
+    scalar self.max_P = (self.with_seasonality == TRUE) ? 1 : 0
+    scalar self.min_Q = 0
+    scalar self.max_Q = (self.with_seasonality == TRUE) ? 1 : 0
 
     # TODO: check for what these are
     #    scalar self.stationary = FALSE
@@ -125,7 +121,7 @@ function strings get_parameter_names (void)
 end function
 
 
-function scalar n_combinations (const bundle self)
+function void add_n_combinations (bundle *self)
     /* Compute number of parameter combinations. */
 
     scalar n = 1
@@ -136,7 +132,22 @@ function scalar n_combinations (const bundle self)
         scalar n *= (1 + self.max_@param - self.min_@param)
     endloop
 
-    return n
+    scalar self.n_combinations = n
+end function
+
+
+function void add_data_to_bundle (bundle *self,
+                                const series y,
+                                const list xlist[null])
+    /* */
+
+    series self.y = y
+    list self.xlist = xlist
+
+    self.name_yseries = argname(y)
+    string self.name_xlist = ""
+    self.name_xlist = (nelem(xlist)) ? argname(xlist) : self.name_xlist
+
 end function
 
 
@@ -149,13 +160,9 @@ function bundle auto_arima (const series y "Endogenous",
     if !exists(opts)
         bundle opts = null
     endif
+
     bundle self = set_bundle_and_get_defaults(y, opts)
-
-    series self.y = y
-    list self.xlist = xlist
-    string self.name_xlist = ""
-    self.name_xlist = (nelem(xlist)) ? argname(xlist) : self.name_xlist
-
+    add_data_to_bundle(&self, y, xlist)
     do_initial_checks(&self)
     if self.error
         return self
@@ -163,8 +170,9 @@ function bundle auto_arima (const series y "Endogenous",
 
     prepare_arima_options_string(&self)
 
-    scalar self.n_combinations = n_combinations(self)
+    add_n_combinations(&self)
     matrix self.parameter_matrix = get_parameter_matrix(self)
+    matrix self.criteria_values = initialize_criteria_values_mat(self)
 
     estimate_models(&self)
     rank_models_by_criteria(&self)
@@ -173,13 +181,14 @@ function bundle auto_arima (const series y "Endogenous",
 end function
 
 function matrix get_auto_arima_parameters (const bundle self,
-                                    const string info_criteria,
-                                    const int model_rank[1::])
+                                            const string info_criteria,
+                                            const int model_rank[1::])
     /* Retrieve the vector of ARIMA parameters of the the i-th best model for a specific information criterion. */
 
     errorif(model_rank > self.n_combinations, sprintf("Selected model rank (%d) exceeds number of models estimated (%d).", model_rank, self.n_combinations))
 
     matrix pos_info_criteria = instrings(get_info_criteria_names(), info_criteria)
+
     errorif(!nelem(pos_info_criteria), sprintf("Information criteria '%s' unknown.", info_criteria))
 
     scalar parameter_combination = self.model_rank_by_criteria[model_rank, pos_info_criteria]
@@ -191,7 +200,7 @@ end function
 function strings row_labels (const bundle self)
     /* Compile row lables for summary table. */
 
-    strings row_labels = array(rows(self.parameter_matrix))
+    strings row_labels = array(self.n_combinations)
 
     loop j=1..rows(self.parameter_matrix)
         string label = sprintf("%d|%d|%d", self.parameter_matrix[j,1], self.parameter_matrix[j,2], self.parameter_matrix[j,3])
@@ -275,8 +284,8 @@ end function
 
 
 function string get_auto_arima_command (const bundle self,
-                                    const string info_criteria,
-                                    const int model_rank)
+                                        const string info_criteria,
+                                        const int model_rank)
     /* Compile gretl command of a model selected by information criteria and rank. */
 
     matrix beta = get_auto_arima_parameters(self, info_criteria, model_rank)
@@ -294,9 +303,8 @@ end function
 function void rank_models_by_criteria (bundle *self)
     /* Rank models by information criteria. */
 
-    matrix criteria_values = seq(1, n_combinations(self))' ~ self.criteria_values
-    matrix model_rank_by_criteria = mshape(NA, rows(self.criteria_values), cols(self.criteria_values))
-    #cnameset(model_rank_by_criteria, get_info_criteria_names())
+    matrix criteria_values = seq(1, self.n_combinations)' ~ self.criteria_values
+    matrix model_rank_by_criteria = initialize_criteria_values_mat(self)
     strings criteria_names = get_info_criteria_names()
 
     loop foreach i criteria_names
@@ -327,14 +335,22 @@ function void get_parameters (const matrix parameter_matrix,
      endif
  end function
 
+function matrix initialize_criteria_values_mat (const bundle self)
+    /* code description
+    return: type, description */
+
+    matrix criteria_values = mshape(NA, rows(self.parameter_matrix), 3)
+    cnameset(criteria_values, get_info_criteria_names())
+
+    return criteria_values
+end function
+
 
 function void estimate_models (bundle *self)
     /* Estimate SARIMAX models for all parameter combinations. */
 
     series y = self.y
     list xlist = self.xlist
-    matrix self.criteria_values = mshape(NA, rows(self.parameter_matrix), 3)
-    cnameset(self.criteria_values, get_info_criteria_names())
 
     # Restrict the data set to the least common sample to ensure that information criteria a comparable
     # TODO:is this offset computation correct?
@@ -365,8 +381,9 @@ function matrix arima_estimation_get_info_crits (const series y,
 
     string arima_model_options_string = final_model_options_string(self)
     scalar p, d, q, P, D, Q
-    matrix crits = mshape(NA, 1, nelem(get_info_criteria_names()))
-    strings criteria = get_info_criteria_names()
+    strings criteria_names = get_info_criteria_names()
+    matrix criteria_values = mshape(NA, 1, nelem(criteria_names))
+
 
     get_parameters(self.parameter_matrix[parameter_set_id,], &p, &d, &q, &P, &D, &Q)
 
@@ -379,24 +396,38 @@ function matrix arima_estimation_get_info_crits (const series y,
     if $error && self.verbose
         printWarning(sprintf("Failed to estimated SARIMAX(%d,%d,%d,%d,%d,%d) model. Ignored.", p, d, q, P, D, Q))
     else
-        loop foreach i criteria
-            string crit = sprintf("$%s", criteria[i])
-            crits[i] = @crit
+        loop foreach i criteria_names
+            string crit = sprintf("$%s", criteria_names[i])
+            criteria_values[i] = @crit
         endloop
     endif
 
-    return crits
+    return criteria_values
+end function
+
+function void set_sarima_parameters_to_nan (bundle *self)
+    /* Remove seasonal arima parameters from bundle if not needed. */
+
+    if data_has_seasonality() == FALSE
+        scalar self.min_D = NA
+        scalar self.max_D = NA
+        scalar self.min_P = NA
+        scalar self.max_P = NA
+        scalar self.min_Q = NA
+        scalar self.max_Q = NA
+    endif
 end function
 
 
-function matrix get_parameter_matrix (const bundle self)
+function matrix get_parameter_matrix (bundle self)
     /* Prepare matrix with all parameter combinations for ARIMA. */
 
-    if data_has_seasonality()
-        matrix combs = sarima_parameter_matrix(self)
-    else
-        matrix combs = arima_parameter_matrix(self)
-    endif
+    matrix combs = sarima_parameter_matrix(self)
+
+    # Special treatment for non-seasonal case
+    matrix combs = combs[,1:nelem(get_parameter_names())]   # Grab only p, d, q
+    set_sarima_parameters_to_nan(&self)
+
     cnameset(combs, get_parameter_names())
 
     return combs
@@ -466,8 +497,9 @@ function scalar update_repeat (const int repeat, const int multiply_by)
 end function
 */
 
+/*
 function matrix arima_parameter_matrix (const bundle self)
-    /* Prepare the parameter combindations for ARIMA. */
+   #Prepare the parameter combindations for ARIMA.
 
     scalar k = 3        # p, d, q
     scalar n_p = n_lags(self.min_p, self.max_p)
@@ -493,7 +525,7 @@ function matrix arima_parameter_matrix (const bundle self)
 
     return combs
 end function
-
+*/
 
 # TODO: many more options may be added -- see 'help arima'
 function void prepare_arima_options_string (bundle *self)
@@ -501,7 +533,8 @@ function void prepare_arima_options_string (bundle *self)
 
     string arima_model_options_string = ""
 
-    arima_model_options_string = (self.intercept == FALSE) ? "--nc " : arima_model_options_string
+    arima_model_options_string = (self.with_intercept == FALSE) ? "--nc " : arima_model_options_string
+
     arima_model_options_string += (self.estimation_method == "conditional_ml") ? "--conditional" : ""
 
     self.arima_model_options_string = arima_model_options_string
@@ -511,7 +544,7 @@ end function
 function void drop_intercept_from_xlist (bundle *self)
     /* Drop intercept from xlist if it should not enter the model. */
 
-    if inlist(self.xlist, "const") && self.intercept == FALSE
+    if inlist(self.xlist, "const") && self.with_intercept == FALSE
         self.xlist -= const
         if self.verbose
             printInfo("Intercept has been dropped.")

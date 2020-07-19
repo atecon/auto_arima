@@ -12,27 +12,33 @@ elif EXAMPLE == 2
 endif
 
 
+list xlist = null
 if EXAMPLE == 1
     series y = ldiff(LRM)
+    xlist = ldiff(LRY)
+
+    # Run several ARIMA models
+    bundle Bout = auto_arima(y, xlist, defbundle("verbose", 1))
+
 elif EXAMPLE == 2
     series y = ldiff(gdp)
+
+    # Run several ARIMA models
+    bundle Bout = auto_arima(y, , defbundle("verbose", 1))
 endif
 
-list xlist = null
-
-# Run several ARIMA models
-bundle Bout = auto_arima(y, , defbundle("verbose", 1))
-print Bout              # print stuff in resulting bundle
+# print stuff in resulting bundle
+print Bout
 
 # TODO: Print summary of results for all info-crit
-#print_auto_arima_results(Bout)
+print_auto_arima_results(Bout)
 
 # Print coefficient vector of the n-th best model using the AIC
 matrix arima_params = get_auto_arima_parameters(Bout, "aic", 1)
 print arima_params
 
 # Retrieve the gretl command for estimating the n-th best model according to BIC
-string arima_cmd = get_auto_arima_command(Bout, "bic", 3)
+string arima_cmd = get_auto_arima_command(Bout, "bic", 2)
 arima_cmd
 # Execute actual estimation
 @arima_cmd
