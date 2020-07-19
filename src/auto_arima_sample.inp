@@ -37,6 +37,10 @@ print_auto_arima_results(Bout)
 matrix arima_params = get_auto_arima_parameters(Bout, "aic", 1)
 print arima_params
 
+matrix arima_params = get_auto_arima_parameters(Bout, "aicc", 1)
+print arima_params
+
+
 # Retrieve the gretl command for estimating the n-th best model according to BIC
 string arima_cmd = get_auto_arima_command(Bout, "bic", 2)
 arima_cmd

@@ -85,32 +85,14 @@ function bundle default_values (const series y)
     scalar self.min_Q = 0
     scalar self.max_Q = (self.with_seasonality == TRUE) ? 1 : 0
 
-    # TODO: check for what these are
-    #    scalar self.stationary = FALSE
-    #    scalar self.stepwise = TRUE
-    #    scalar self.nmodels = 94,
-    #  trace = FALSE,
-    #  approximation = (length(x) > 150 | frequency(x) > 12),
-    #  method = NULL,
-    #  truncate = NULL,
-    #  test = c("kpss", "adf", "pp"),
-    #  test.args = list(),
-    #  seasonal.test = c("seas", "ocsb", "hegy", "ch"),
-    #  seasonal.test.args = list(),
-    #  allowdrift = TRUE,
-    #  allowmean = TRUE,
-    #  lambda = NULL,
-    #  biasadj = FALSE,
-    #  parallel = FALSE,
-    #  num.cores = 2,
-
     return self
 end function
 
 
 function strings get_info_criteria_names (void)
-    return defarray("aic", "bic", "hqc")
+    return defarray("aicc", "aic", "bic", "hqc")
 end function
+
 
 function strings get_parameter_names (void)
     if data_has_seasonality()
@@ -252,8 +234,8 @@ function void print_summary_intro (const bundle self)
     printf "\t\tSummary results of ARIMA model combinations\n\n"
     print "Three, two and one asterisk(s) below indicate the 1st, 2nd and 3rd best (that"
     print "is, minimized) values of the respective information criteria, AIC = Akaike"
-    print "criterion, BIC = Schwarz Bayesian criterion and HQC = Hannan-Quinn"
-    print "criterion across all ARIMA model specification."
+    print "criterion, AICC = corrected AIC, BIC = Schwarz Bayesian criterion and"
+    print "HQC = Hannan-Quinn criterion across all ARIMA model specification."
     printf "\nCommon sample used for all models: %s to %s", self.sample_start, self.sample_end
 end function
 
@@ -339,7 +321,7 @@ function matrix initialize_criteria_values_mat (const bundle self)
     /* code description
     return: type, description */
 
-    matrix criteria_values = mshape(NA, rows(self.parameter_matrix), 3)
+    matrix criteria_values = mshape(NA, rows(self.parameter_matrix), nelem(get_info_criteria_names()))
     cnameset(criteria_values, get_info_criteria_names())
 
     return criteria_values
@@ -397,13 +379,29 @@ function matrix arima_estimation_get_info_crits (const series y,
         printWarning(sprintf("Failed to estimated SARIMAX(%d,%d,%d,%d,%d,%d) model. Ignored.", p, d, q, P, D, Q))
     else
         loop foreach i criteria_names
-            string crit = sprintf("$%s", criteria_names[i])
-            criteria_values[i] = @crit
+            if criteria_names[i] != "aicc"
+                string crit = sprintf("$%s", criteria_names[i])
+                criteria_values[i] = @crit
+            else
+                criteria_values[i] = aicc($model)
+            endif
         endloop
     endif
 
     return criteria_values
 end function
+
+
+function scalar aicc (const bundle model)
+    /* Compute the corrected AIC criteria. */
+
+    scalar aic = model.aic
+    scalar n = model.T
+    scalar k = model.ncoeff
+
+    return aic + (2 * k * (k+1)) / (n-k-1)
+end function
+
 
 function void set_sarima_parameters_to_nan (bundle *self)
     /* Remove seasonal arima parameters from bundle if not needed. */
