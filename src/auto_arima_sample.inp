@@ -1,14 +1,15 @@
 clear
 set verbose off
 
-include "/home/at/git/auto_arima/src/auto_arima.inp" --force
+include auto_arima.gfn
 
-scalar EXAMPLE = 1
+# Select an example
+scalar EXAMPLE = 2
 
 if EXAMPLE == 1
-    open denmark.gdt -q -p
+    open denmark.gdt -q -p     # quarterlyfrequency
 elif EXAMPLE == 2
-    open hendry_jae.gdt -q -p
+    open hendry_jae.gdt -q -p  # annual frequency
 endif
 
 

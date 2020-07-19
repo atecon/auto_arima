@@ -1,0 +1,719 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<gretl-functions>
+<gretl-function-package name="auto_arima" needs-time-series-data="true" minver="2020b">
+<author email="atecon@posteo.de">Artur Tarassow</author>
+<version>0.5</version>
+<date>2020-07-19</date>
+<description>Return best ARIMA model by means of information criteria</description>
+<tags>C22</tags>
+<help>
+Fit best SARIMA(X) model to univariate time series.
+
+Returns best SARIMAX model according to either AIC, AICc, BIC or HQC value. The function conducts a search over possible model within the order constraints provided.
+
+This is an alternative package to the existing &quot;armax&quot; package written by Yi-Nung Yang.
+
+The features of the auto_arima package which are missing in &quot;armax&quot; are:
+- Consideration of seasonal ARIMA models with and without exogenous regressors.
+- Simpler API compared to &quot;armax&quot;.
+- Public convenience functions for the user.
+- Source code is tested by means of unit-tests to minimize bugs.
+
+Please ask questions and report bugs on the gretl mailing list if possible. Alternatively, create an issue ticket on the github repo (see below).
+Source code and test script(s) can be found here:
+https://github.com/atecon/auto_arima
+
+
+
+PUBLIC FUNCTIONS:
+-----------------------------------------------------------------------
+Function:       auto_arima(const series y, const list xlist[null],
+                bundle opts[null])
+Arguments:
+y:              series, Endogenous variable
+xlist:          list, List of exogenous variables (optional)
+opts:           bundle, Bundle for passing SARIMA parameters and further
+                options (see below for details)
+
+Return:
+Bundle comprising the various items.
+
+-----------------------------------------------------------------------
+
+-----------------------------------------------------------------------
+Function:       print_auto_arima_results(const bundle model)
+
+Arguments:
+model:          bundle, Bundle returned by auto_arima() function
+
+Return:
+No return value. Print summary results for each parameter combination and
+information criteria estimated in tabular form.
+-----------------------------------------------------------------------
+
+-----------------------------------------------------------------------
+Function:       get_auto_arima_parameters (const bundle model, const string
+                info_criteria, const int model_rank[1::])
+
+Arguments:
+model:          bundle, Bundle returned by auto_arima() function
+info_criteria:  string, Name of information criteria (either &quot;aicc&quot;, &quot;aic&quot;,
+                &quot;bic&quot; or &quot;hqc&quot;) for which to return SARIMA parameter vector
+model_rank:     int, Compute the SARIMA parameter vector for the n-th
+                best model in terms of the chosen information criteria.
+
+Return:
+Vector of SARIMA parameters of the n-th best model in terms of the chosen information criteria.
+-----------------------------------------------------------------------
+
+-----------------------------------------------------------------------
+Function:       get_auto_arima_command (const bundle model, const string
+                info_criteria, const int model_rank[1::])
+
+Arguments:
+model:          bundle, Bundle returned by auto_arima() function
+info_criteria:  string, Name of information criteria (either &quot;aicc&quot;, &quot;aic&quot;,
+                &quot;bic&quot; or &quot;hqc&quot;) for which to return SARIMA parameter vector
+model_rank:     int, Consider the n-th best model in terms of the chosen
+                information criteria.
+
+Return:
+String holding the gretl/ hansl command for estimating the selected model.
+-----------------------------------------------------------------------
+
+
+The optional 'opts' bundle:
+----------------------------
+The user can pass an optional bundle as the 3rd argument to the
+auto_arima() function. Currently, the following options are supported:
+
+* verbose:           bool, print details if 1, otherwise no print out
+                     (default 1).
+* with_intercept:    bool, if 1 (or TRUE) an intercept is added to the
+                     model, of 0 (or FALSE) no intercept is added (default 1).
+* with_seasonality:  bool, if 1 (or TRUE) seasonal ARIMA parameters
+                     combinations are considered (if the data frequency
+                     has seasonality), otherwise seasonal ARIMA parameters
+                     are not considered (default 1).
+* estimation_method: string, if &quot;conditional_ml&quot; use conditional maximum
+                     likelihood
+
+
+Default SARIMA parameter values:
+--------------------------------
+* min_p          :  scalar, minimum autoregressive order (default 0)
+* max_p          :  scalar, maximum autoregressive order (default 1)
+* min_d          :  scalar, minimum order of 1-st differencing (default 0)
+* max_d          :  scalar, maximum order of 1-st differencing (default 1)
+* min_q          :  scalar, minimum moving-average order (default 0)
+* max_q          :  scalar, maximum moving-average order (default 1)
+* min_P          :  scalar, minimum seasonal moving-average order (default 0)
+* max_P          :  scalar, maximum seasonal moving-average order (default 1)
+* min_D          :  scalar, minimum order of seasonal-differencing (default 0)
+* max_D          :  scalar, maximum order of seasonal-differencing (default 1)
+* min_Q          :  scalar, minimum seasonal moving-average order (default 0)
+* max_Q          :  scalar, maximum seasonal moving-average order (default 1)
+
+
+
+Changelog:
+- v0.5, July 2020:
+	+ initial release
+</help>
+<gretl-function name="auto_arima" type="bundle">
+ <params count="3">
+  <param name="y" type="series" const="true">
+<description>Endogenous</description>
+  </param>
+  <param name="xlist" type="list" optional="true" const="true">
+<description>Exogenous</description>
+  </param>
+  <param name="opts" type="bundle" optional="true">
+<description>Parameter bundle</description>
+  </param>
+ </params>
+<code># TODO: User passes a bundle with key-values referencing to min_/max_p etc
+if !exists(opts)
+  bundle opts = null
+endif
+bundle self = set_bundle_and_get_defaults(y, opts)
+add_data_to_bundle(&amp;self, y, xlist)
+do_initial_checks(&amp;self)
+if self.error
+  return self
+endif
+prepare_arima_options_string(&amp;self)
+add_n_combinations(&amp;self)
+matrix self.parameter_matrix = get_parameter_matrix(self)
+matrix self.criteria_values = initialize_criteria_values_mat(self)
+estimate_models(&amp;self)
+rank_models_by_criteria(&amp;self)
+return self
+</code>
+</gretl-function>
+<gretl-function name="print_auto_arima_results" type="void">
+ <params count="1">
+  <param name="self" type="bundle" const="true"/>
+ </params>
+<code>/* Summarize parameter results for each information criteria. */
+print_table_border()
+print_summary_intro(self)
+print_table_header()
+print_table_and_row_labels(self)
+print_table_border()
+</code>
+</gretl-function>
+<gretl-function name="get_auto_arima_parameters" type="matrix">
+ <params count="3">
+  <param name="self" type="bundle" const="true"/>
+  <param name="info_criteria" type="string" const="true"/>
+  <param name="model_rank" type="int" min="1" const="true"/>
+ </params>
+<code>/* Retrieve the vector of ARIMA parameters of the the i-th best model for a specific information criterion. */
+errorif(model_rank &gt; self.n_combinations, sprintf(&quot;Selected model rank (%d) exceeds number of models estimated (%d).&quot;, model_rank, self.n_combinations))
+matrix pos_info_criteria = instrings(get_info_criteria_names(), info_criteria)
+errorif(!nelem(pos_info_criteria), sprintf(&quot;Information criteria '%s' unknown.&quot;, info_criteria))
+scalar parameter_combination = self.model_rank_by_criteria[model_rank, pos_info_criteria]
+return self.parameter_matrix[parameter_combination,]
+</code>
+</gretl-function>
+<gretl-function name="get_auto_arima_command" type="string">
+ <params count="3">
+  <param name="self" type="bundle" const="true"/>
+  <param name="info_criteria" type="string" const="true"/>
+  <param name="model_rank" type="int" const="true"/>
+ </params>
+<code>/* Compile gretl command of a model selected by information criteria and rank. */
+matrix beta = get_auto_arima_parameters(self, info_criteria, model_rank)
+string cmd = sprintf(&quot;arima %d %d %d&quot;, beta[1], beta[2], beta[3])
+if data_has_seasonality()
+  cmd += sprintf(&quot; ; %d %d %d&quot;, beta[4], beta[5], beta[6])
+endif
+cmd += sprintf(&quot; ; %s %s %s&quot;, self.name_yseries, self.name_xlist, self.arima_model_options_string)
+return cmd
+</code>
+</gretl-function>
+<gretl-function name="y_is_constant" type="void" private="1">
+ <params count="1">
+  <param name="self" type="bundleref"/>
+ </params>
+<code>/* Check whether y is constant. Set self.error as TRUE of y is constant.*/
+series y = self.y
+if isconst(y) == TRUE
+  if self.verbose &gt; 0
+    printError(sprintf(&quot;Endogenous series '%s' is constant..&quot;, self.name_yseries))
+  endif
+  self.error = TRUE
+endif
+</code>
+</gretl-function>
+<gretl-function name="add_intercept_to_xlist" type="void" private="1">
+ <params count="1">
+  <param name="self" type="bundleref"/>
+ </params>
+<code>/* Add intercept to xlist if it should enter the model. */
+if !inlist(self.xlist, &quot;const&quot;) &amp;&amp; self.with_intercept == TRUE
+  if self.verbose == 1
+    printInfo(&quot;Intercept added to xlist as you set intercept == TRUE&quot;)
+  endif
+  self.xlist += const
+endif
+</code>
+</gretl-function>
+<gretl-function name="do_initial_checks" type="void" private="1">
+ <params count="1">
+  <param name="self" type="bundleref"/>
+ </params>
+<code>/* Perform initial checks and drop optionally intercept. */
+y_is_constant(&amp;self)
+drop_intercept_from_xlist(&amp;self)
+</code>
+</gretl-function>
+<gretl-function name="data_has_seasonality" type="scalar" private="1">
+<code>/* Flag seasonality of data set */
+return ($pd &gt; 1) ? 1 : 0
+</code>
+</gretl-function>
+<gretl-function name="set_bundle_and_get_defaults" type="bundle" private="1">
+ <params count="2">
+  <param name="y" type="series" const="true"/>
+  <param name="opts" type="bundle" optional="true"/>
+ </params>
+<code>/* Compile self bundle by merging eventual information
+from 'opts' bundle. */
+if !exists(opts)
+  bundle opts = null
+endif
+bundle self = default_values(y)
+self = opts + self			# override defaults
+clean_up_self(&amp;self)
+return self
+</code>
+</gretl-function>
+<gretl-function name="clean_up_self" type="void" private="1">
+ <params count="1">
+  <param name="self" type="bundleref"/>
+ </params>
+<code>/* */
+delete self.methods_supported --force
+</code>
+</gretl-function>
+<gretl-function name="default_values" type="bundle" private="1">
+ <params count="1">
+  <param name="y" type="series" const="true"/>
+ </params>
+<code>/* Set default values */
+bundle self = null
+scalar self.error = FALSE
+scalar self.y_is_constant = FALSE
+scalar self.with_intercept = TRUE
+scalar self.with_seasonality = data_has_seasonality()
+scalar self.verbose = 1
+list self.xlist = null
+strings self.methods_supported  = defarray(&quot;exact_ml&quot;, &quot;conditional_ml&quot;)
+string self.estimation_method = &quot;exact_ml&quot; # gretl built-in default
+# arima parameters
+scalar self.min_p = 0
+scalar self.max_p = 1   # TODO: $pd
+scalar self.min_d = 0
+scalar self.max_d = 1
+scalar self.min_q = 0
+scalar self.max_q = 1
+# seasonal arima parameters
+scalar self.min_D = 0
+scalar self.max_D = (self.with_seasonality == TRUE) ? 1 : 0
+scalar self.min_P = 0
+scalar self.max_P = (self.with_seasonality == TRUE) ? 1 : 0
+scalar self.min_Q = 0
+scalar self.max_Q = (self.with_seasonality == TRUE) ? 1 : 0
+return self
+</code>
+</gretl-function>
+<gretl-function name="get_info_criteria_names" type="strings" private="1">
+<code>return defarray(&quot;aicc&quot;, &quot;aic&quot;, &quot;bic&quot;, &quot;hqc&quot;)
+</code>
+</gretl-function>
+<gretl-function name="get_parameter_names" type="strings" private="1">
+<code>if data_has_seasonality()
+  return defarray(&quot;p&quot;, &quot;d&quot;, &quot;q&quot;, &quot;P&quot;, &quot;D&quot;, &quot;Q&quot;)
+else
+  return defarray(&quot;p&quot;, &quot;d&quot;, &quot;q&quot;)
+endif
+</code>
+</gretl-function>
+<gretl-function name="add_n_combinations" type="void" private="1">
+ <params count="1">
+  <param name="self" type="bundleref"/>
+ </params>
+<code>/* Compute number of parameter combinations. */
+scalar n = 1
+strings parameters = get_parameter_names()
+loop foreach i parameters
+  string param = parameters[i]
+  scalar n *= (1 + self.max_@param - self.min_@param)
+endloop
+scalar self.n_combinations = n
+</code>
+</gretl-function>
+<gretl-function name="add_data_to_bundle" type="void" private="1">
+ <params count="3">
+  <param name="self" type="bundleref"/>
+  <param name="y" type="series" const="true"/>
+  <param name="xlist" type="list" optional="true" const="true"/>
+ </params>
+<code>/* */
+series self.y = y
+list self.xlist = xlist
+self.name_yseries = argname(y)
+string self.name_xlist = &quot;&quot;
+self.name_xlist = (nelem(xlist)) ? argname(xlist) : self.name_xlist
+</code>
+</gretl-function>
+<gretl-function name="row_labels" type="strings" private="1">
+ <params count="1">
+  <param name="self" type="bundle" const="true"/>
+ </params>
+<code>/* Compile row lables for summary table. */
+strings row_labels = array(self.n_combinations)
+loop j=1..rows(self.parameter_matrix)
+  string label = sprintf(&quot;%d|%d|%d&quot;, self.parameter_matrix[j,1], self.parameter_matrix[j,2], self.parameter_matrix[j,3])
+  if data_has_seasonality()
+    label += sprintf(&quot; |%d|%d|%d&quot;, self.parameter_matrix[j,4], self.parameter_matrix[j,5], self.parameter_matrix[j,6])
+  endif
+  row_labels[j] = label
+endloop
+return row_labels
+</code>
+</gretl-function>
+<gretl-function name="asterisks" type="string" private="1">
+ <params count="1">
+  <param name="position" type="int" min="1" const="true"/>
+ </params>
+<code>if position == 1
+  return &quot;***&quot;
+elif position == 2
+  return &quot;**&quot;
+elif position == 3
+  return &quot;*&quot;
+else
+  return &quot;&quot;
+endif
+</code>
+</gretl-function>
+<gretl-function name="print_table_and_row_labels" type="void" private="1">
+ <params count="1">
+  <param name="self" type="bundle" const="true"/>
+ </params>
+<code>/* Print actual summary values and row labels */
+strings row_labels = row_labels(self)
+strings criteria_names = get_info_criteria_names()
+string asterisks
+printf &quot;\n&quot;
+loop j=1..rows(self.parameter_matrix)
+  printf &quot;%s &quot;, row_labels[j]
+  # actual value plus asterisks indicating rank of model specification
+  loop i=1..nelem(criteria_names)
+    printf &quot;%12.3f%s&quot;, self.criteria_values[j,i], asterisks(self.model_rank_by_criteria[j,i])
+  endloop
+  printf &quot;\n&quot;
+endloop
+</code>
+</gretl-function>
+<gretl-function name="print_summary_intro" type="void" private="1">
+ <params count="1">
+  <param name="self" type="bundle" const="true"/>
+ </params>
+<code>printf &quot;\t\tSummary results of ARIMA model combinations\n\n&quot;
+print &quot;Three, two and one asterisk(s) below indicate the 1st, 2nd and 3rd best (that&quot;
+print &quot;is, minimized) values of the respective information criteria, AIC = Akaike&quot;
+print &quot;criterion, AICC = corrected AIC, BIC = Schwarz Bayesian criterion and&quot;
+print &quot;HQC = Hannan-Quinn criterion across all ARIMA model specification.&quot;
+printf &quot;\nCommon sample used for all models: %s to %s&quot;, self.sample_start, self.sample_end
+</code>
+</gretl-function>
+<gretl-function name="print_table_border" type="void" private="1">
+<code>printf &quot;\n*******************************************************************\n&quot;
+</code>
+</gretl-function>
+<gretl-function name="print_table_header" type="void" private="1">
+<code>strings criteria_names = get_info_criteria_names()
+printf &quot;\n\nARIMA-spec. \t&quot;
+loop foreach i criteria_names
+  printf &quot;$i \t\t&quot;
+endloop
+printf &quot;\n-----------------------------------------------------------\n&quot;
+</code>
+</gretl-function>
+<gretl-function name="rank_models_by_criteria" type="void" private="1">
+ <params count="1">
+  <param name="self" type="bundleref"/>
+ </params>
+<code>/* Rank models by information criteria. */
+matrix criteria_values = seq(1, self.n_combinations)' ~ self.criteria_values
+matrix model_rank_by_criteria = initialize_criteria_values_mat(self)
+strings criteria_names = get_info_criteria_names()
+loop foreach i criteria_names
+  model_rank_by_criteria[,i] = msortby(criteria_values, 1+i)[,1]
+endloop
+cnameset(model_rank_by_criteria, criteria_names)
+self.model_rank_by_criteria = model_rank_by_criteria
+</code>
+</gretl-function>
+<gretl-function name="get_parameters" type="void" private="1">
+ <params count="7">
+  <param name="parameter_matrix" type="matrix" const="true"/>
+  <param name="p" type="scalarref"/>
+  <param name="d" type="scalarref"/>
+  <param name="q" type="scalarref"/>
+  <param name="P" type="scalarref" optional="true"/>
+  <param name="D" type="scalarref" optional="true"/>
+  <param name="Q" type="scalarref" optional="true"/>
+ </params>
+<code>/* Retrieve sarima parameters from overall parameter matrix. */
+scalar p = parameter_matrix[1]
+scalar d = parameter_matrix[2]
+scalar q = parameter_matrix[3]
+if data_has_seasonality()
+  scalar P = parameter_matrix[4]
+  scalar D = parameter_matrix[5]
+  scalar Q = parameter_matrix[6]
+endif
+</code>
+</gretl-function>
+<gretl-function name="initialize_criteria_values_mat" type="matrix" private="1">
+ <params count="1">
+  <param name="self" type="bundle" const="true"/>
+ </params>
+<code>/* code description
+return: type, description */
+matrix criteria_values = mshape(NA, rows(self.parameter_matrix), nelem(get_info_criteria_names()))
+cnameset(criteria_values, get_info_criteria_names())
+return criteria_values
+</code>
+</gretl-function>
+<gretl-function name="estimate_models" type="void" private="1">
+ <params count="1">
+  <param name="self" type="bundleref"/>
+ </params>
+<code>/* Estimate SARIMAX models for all parameter combinations. */
+series y = self.y
+list xlist = self.xlist
+# Restrict the data set to the least common sample to ensure that information criteria a comparable
+# TODO:is this offset computation correct?
+scalar offset = max(self.parameter_matrix)
+smpl +offset ;
+string self.sample_start = obslabel($t1)
+string self.sample_end = obslabel($t2)
+loop i=1..rows(self.parameter_matrix)
+  self.criteria_values[i,] = arima_estimation_get_info_crits(y, xlist, self, $i)
+endloop
+</code>
+</gretl-function>
+<gretl-function name="final_model_options_string" type="string" private="1">
+ <params count="1">
+  <param name="self" type="bundle" const="true"/>
+ </params>
+<code>/* code description
+return: type, description */
+return (self.verbose == 0) ? self.arima_model_options_string : (self.verbose == 1 ? &quot;--quiet&quot; : &quot;--verbose&quot;)
+</code>
+</gretl-function>
+<gretl-function name="arima_estimation_get_info_crits" type="matrix" private="1">
+ <params count="4">
+  <param name="y" type="series" const="true"/>
+  <param name="xlist" type="list" const="true"/>
+  <param name="self" type="bundle" const="true"/>
+  <param name="parameter_set_id" type="int" min="1" const="true"/>
+ </params>
+<code>/* Actual estimation of SARIMAX model and computation of information criteria. */
+string arima_model_options_string = final_model_options_string(self)
+scalar p, d, q, P, D, Q
+strings criteria_names = get_info_criteria_names()
+matrix criteria_values = mshape(NA, 1, nelem(criteria_names))
+get_parameters(self.parameter_matrix[parameter_set_id,], &amp;p, &amp;d, &amp;q, &amp;P, &amp;D, &amp;Q)
+if data_has_seasonality()
+  catch arima p d q ; P D Q; y xlist @arima_model_options_string
+else
+  catch arima p d q ; y xlist @arima_model_options_string
+endif
+if ($error || !inbundle($model, &quot;aic&quot;)) &amp;&amp; self.verbose
+  printWarning(sprintf(&quot;Failed to estimated SARIMAX(%d,%d,%d,%d,%d,%d) model. Ignored.&quot;, p, d, q, P, D, Q))
+else
+  loop foreach i criteria_names
+    if criteria_names[i] != &quot;aicc&quot;
+      string crit = sprintf(&quot;$%s&quot;, criteria_names[i])
+      criteria_values[i] = @crit
+    else
+      criteria_values[i] = aicc($model)
+    endif
+  endloop
+endif
+return criteria_values
+</code>
+</gretl-function>
+<gretl-function name="aicc" type="scalar" private="1">
+ <params count="1">
+  <param name="model" type="bundle" const="true"/>
+ </params>
+<code>/* Compute the corrected AIC criteria. */
+scalar aic = model.aic
+scalar n = model.T
+scalar k = model.ncoeff
+return aic + (2 * k * (k+1)) / (n-k-1)
+</code>
+</gretl-function>
+<gretl-function name="set_sarima_parameters_to_nan" type="void" private="1">
+ <params count="1">
+  <param name="self" type="bundleref"/>
+ </params>
+<code>/* Remove seasonal arima parameters from bundle if not needed. */
+if data_has_seasonality() == FALSE
+  scalar self.min_D = NA
+  scalar self.max_D = NA
+  scalar self.min_P = NA
+  scalar self.max_P = NA
+  scalar self.min_Q = NA
+  scalar self.max_Q = NA
+endif
+</code>
+</gretl-function>
+<gretl-function name="get_parameter_matrix" type="matrix" private="1">
+ <params count="1">
+  <param name="self" type="bundle"/>
+ </params>
+<code>/* Prepare matrix with all parameter combinations for ARIMA. */
+matrix combs = sarima_parameter_matrix(self)
+# Special treatment for non-seasonal case
+matrix combs = combs[,1:nelem(get_parameter_names())]   # Grab only p, d, q
+set_sarima_parameters_to_nan(&amp;self)
+cnameset(combs, get_parameter_names())
+return combs
+</code>
+</gretl-function>
+<gretl-function name="n_lags" type="scalar" private="1">
+ <params count="2">
+  <param name="min_lag" type="int" min="0" const="true"/>
+  <param name="max_lag" type="int" min="0" const="true"/>
+ </params>
+<code>errorif(max_lag &lt; min_lag, &quot;Maximum lag cannot be lower than minimum lag.&quot;)
+return 1 + max_lag - min_lag
+</code>
+</gretl-function>
+<gretl-function name="sarima_parameter_matrix" type="matrix" private="1">
+ <params count="1">
+  <param name="self" type="bundle" const="true"/>
+ </params>
+<code>/* Prepare the parameter combindations for SARIMA. */
+scalar k = 6        # p, d, q, P, D, Q
+scalar n_p = n_lags(self.min_p, self.max_p)
+scalar n_d = n_lags(self.min_d, self.max_d)
+scalar n_q = n_lags(self.min_q, self.max_q)
+scalar n_P = n_lags(self.min_P, self.max_P)
+scalar n_D = n_lags(self.min_D, self.max_D)
+scalar n_Q = n_lags(self.min_Q, self.max_Q)
+scalar n_rows = n_p * n_d * n_q * n_P * n_D * n_Q
+matrix combs = mshape(NA, n_rows, k)
+scalar repeat = 1
+# start with Q (the rightest variable)
+matrix m = ones(n_Q, (n_rows/n_Q)) .* seq(self.min_Q, self.max_Q)'
+combs[,6] = vec(m)
+repeat *= n_Q
+matrix m = ones(n_D, repeat) .* seq(self.min_D, self.max_D)'
+m = vec(m')
+scalar factor = n_p * n_d * n_q * n_P
+combs[,5] = vec(m .* ones(rows(m), factor))
+repeat *= n_D
+matrix m = ones(n_P, repeat) .* seq(self.min_P, self.max_P)'
+m = vec(m')
+scalar factor = n_p * n_d * n_q
+combs[,4] = vec(m .* ones(rows(m), factor))
+repeat *= n_P
+matrix m = ones(n_q, repeat) .* seq(self.min_q, self.max_q)'
+m = vec(m')
+scalar factor = n_p * n_d
+combs[,3] = vec(m .* ones(rows(m), factor))
+repeat *= n_q
+matrix m = ones(n_d, repeat) .* seq(self.min_d, self.max_d)'
+m = vec(m')
+scalar factor = n_p
+combs[,2] = vec(m .* ones(rows(m), factor))
+repeat *= n_d
+matrix m = ones(n_p, repeat) .* seq(self.min_p, self.max_p)'
+m = vec(m')
+combs[,1] = vec(m')
+return combs
+</code>
+</gretl-function>
+<gretl-function name="prepare_arima_options_string" type="void" private="1">
+ <params count="1">
+  <param name="self" type="bundleref"/>
+ </params>
+<code>/* Compile various option strings for arima command. */
+string arima_model_options_string = &quot;&quot;
+arima_model_options_string = (self.with_intercept == FALSE) ? &quot;--nc &quot; : arima_model_options_string
+arima_model_options_string += (self.estimation_method == &quot;conditional_ml&quot;) ? &quot;--conditional&quot; : &quot;&quot;
+self.arima_model_options_string = arima_model_options_string
+</code>
+</gretl-function>
+<gretl-function name="drop_intercept_from_xlist" type="void" private="1">
+ <params count="1">
+  <param name="self" type="bundleref"/>
+ </params>
+<code>/* Drop intercept from xlist if it should not enter the model. */
+if inlist(self.xlist, &quot;const&quot;) &amp;&amp; self.with_intercept == FALSE
+  self.xlist -= const
+  if self.verbose
+    printInfo(&quot;Intercept has been dropped.&quot;)
+  endif
+endif
+</code>
+</gretl-function>
+<gretl-function name="estimation_method_supported" type="scalar" private="1">
+ <params count="1">
+  <param name="self" type="bundle" const="true"/>
+ </params>
+<code>/* */
+self.estimation_method = tolower(self.estimation_method)
+if instrings(self.methods_supported, self.estimation_method)
+  return 1
+else
+  printWarning(sprintf(&quot;Estimation method '%s' not supported.&quot;, self.estimation_method))
+  printInfo(sprintf(&quot;Will switch to %s method.&quot;, self.methods_supported[1]))
+  self.estimation_method = self.methods_supported[1]
+  return 0
+endif
+</code>
+</gretl-function>
+<gretl-function name="printInfo" type="void" private="1">
+ <params count="1">
+  <param name="s" type="string" const="true"/>
+ </params>
+<code>printf &quot;\nInfo: %s\n&quot;, s
+</code>
+</gretl-function>
+<gretl-function name="printWarning" type="void" private="1">
+ <params count="1">
+  <param name="s" type="string" const="true"/>
+ </params>
+<code>printf &quot;\nWarning: %s\n&quot;, s
+</code>
+</gretl-function>
+<gretl-function name="printError" type="void" private="1">
+ <params count="1">
+  <param name="s" type="string" const="true"/>
+ </params>
+<code>printf &quot;\nError: %s\n&quot;, s
+</code>
+</gretl-function>
+<sample-script>
+clear
+set verbose off
+
+include &quot;/home/at/git/auto_arima/src/auto_arima.inp&quot; --force
+
+scalar EXAMPLE = 2
+
+if EXAMPLE == 1
+    open denmark.gdt -q -p
+elif EXAMPLE == 2
+    open hendry_jae.gdt -q -p
+endif
+
+
+list xlist = null
+if EXAMPLE == 1
+    series y = ldiff(LRM)
+    xlist = ldiff(LRY)
+
+    # Run several ARIMA models
+    bundle Bout = auto_arima(y, xlist, defbundle(&quot;verbose&quot;, 1))
+
+elif EXAMPLE == 2
+    series y = ldiff(gdp)
+
+    # Run several ARIMA models
+    bundle Bout = auto_arima(y, , defbundle(&quot;verbose&quot;, 1))
+endif
+
+# print stuff in resulting bundle
+print Bout
+
+# TODO: Print summary of results for all info-crit
+print_auto_arima_results(Bout)
+
+# Print coefficient vector of the n-th best model using the AIC
+matrix arima_params = get_auto_arima_parameters(Bout, &quot;aic&quot;, 1)
+print arima_params
+
+matrix arima_params = get_auto_arima_parameters(Bout, &quot;aicc&quot;, 1)
+print arima_params
+
+
+# Retrieve the gretl command for estimating the n-th best model according to BIC
+string arima_cmd = get_auto_arima_command(Bout, &quot;bic&quot;, 2)
+arima_cmd
+# Execute actual estimation
+@arima_cmd
+</sample-script>
+</gretl-function-package>
+</gretl-functions>

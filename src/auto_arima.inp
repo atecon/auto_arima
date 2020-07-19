@@ -50,9 +50,17 @@ function bundle set_bundle_and_get_defaults (const series y,
     bundle self = default_values(y)
     self = opts + self			# override defaults
 
+    clean_up_self(&self)
+
     return self
 end function
 
+
+function void clean_up_self (bundle *self)
+    /* */
+
+    delete self.methods_supported --force
+end function
 
 function bundle default_values (const series y)
     /* Set default values */
@@ -65,16 +73,15 @@ function bundle default_values (const series y)
     scalar self.verbose = 1
     list self.xlist = null
 
-    # TODO: still needed?
     strings self.methods_supported  = defarray("exact_ml", "conditional_ml")
-    string self.estimation_method = "exact_ml"
+    string self.estimation_method = "exact_ml" # gretl built-in default
 
     # arima parameters
     scalar self.min_p = 0
     scalar self.max_p = 1   # TODO: $pd
-    scalar self.min_d = 1
+    scalar self.min_d = 0
     scalar self.max_d = 1
-    scalar self.min_q = 1
+    scalar self.min_q = 0
     scalar self.max_q = 1
 
     # seasonal arima parameters
@@ -375,7 +382,7 @@ function matrix arima_estimation_get_info_crits (const series y,
         catch arima p d q ; y xlist @arima_model_options_string
     endif
 
-    if $error && self.verbose
+    if ($error || !inbundle($model, "aic")) && self.verbose
         printWarning(sprintf("Failed to estimated SARIMAX(%d,%d,%d,%d,%d,%d) model. Ignored.", p, d, q, P, D, Q))
     else
         loop foreach i criteria_names
@@ -489,41 +496,6 @@ function matrix sarima_parameter_matrix (const bundle self)
     return combs
 end function
 
-/*
-function scalar update_repeat (const int repeat, const int multiply_by)
-    return repeat * multiply_by
-end function
-*/
-
-/*
-function matrix arima_parameter_matrix (const bundle self)
-   #Prepare the parameter combindations for ARIMA.
-
-    scalar k = 3        # p, d, q
-    scalar n_p = n_lags(self.min_p, self.max_p)
-    scalar n_d = n_lags(self.min_d, self.max_d)
-    scalar n_q = n_lags(self.min_q, self.max_q)
-
-    scalar n_rows = n_p * n_d * n_q
-    matrix combs = mshape(NA, n_rows, k)
-    scalar repeat = 1
-
-    # start with q (the rightest variable)
-    matrix m = ones(n_q, (n_rows/n_q)) .* seq(self.min_q, self.max_q)'
-    combs[,3] = vec(m)
-
-    repeat *= n_q
-    matrix m = ones(n_d, repeat) .* seq(self.min_d, self.max_d)'
-    m = vec(m')
-    combs[,2] = vec(m .* ones(rows(m), n_p))
-
-    repeat *= n_d
-    matrix m = ones(n_p, repeat) .* seq(self.min_p, self.max_p)'
-    combs[,1] = vec(m')
-
-    return combs
-end function
-*/
 
 # TODO: many more options may be added -- see 'help arima'
 function void prepare_arima_options_string (bundle *self)
@@ -578,5 +550,4 @@ end function
 function void printError (const string s)
     printf "\nError: %s\n", s
 end function
-
 
