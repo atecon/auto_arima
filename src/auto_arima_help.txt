@@ -93,7 +93,7 @@ auto_arima() function. Currently, the following options are supported:
 Default SARIMA parameter values:
 --------------------------------
 * min_p          :  scalar, minimum autoregressive order (default 0)
-* max_p          :  scalar, maximum autoregressive order (default 1)
+* max_p          :  scalar, maximum autoregressive order (default 4)
 * min_d          :  scalar, minimum order of 1-st differencing (default 0)
 * max_d          :  scalar, maximum order of 1-st differencing (default 1)
 * min_q          :  scalar, minimum moving-average order (default 0)

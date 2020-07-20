@@ -4,7 +4,7 @@ set verbose off
 include auto_arima.gfn
 
 # Select an example
-scalar EXAMPLE = 1
+scalar EXAMPLE = 2
 
 if EXAMPLE == 1
     # Box and Jenkins "Series G" (airline passengers)

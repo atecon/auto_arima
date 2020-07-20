@@ -102,7 +102,7 @@ function bundle default_values (const series y)
 
     # arima parameters
     scalar self.min_p = 0
-    scalar self.max_p = 1
+    scalar self.max_p = 4
     scalar self.min_d = 0
     scalar self.max_d = 1
     scalar self.min_q = 0
@@ -586,3 +586,53 @@ function void printError (const string s)
     printf "\nError: %s\n", s
 end function
 
+
+function bundle auto_arima_gui (const series y "Endogenous",
+                                const list xlist[null] "Exogenous",
+                                const int min_p[0::1] "min. AR parameter",
+                                const int max_p[0::4] "max. AR parameter",
+                                const int min_d[0::0] "min. difference order parameter",
+                                const int max_d[0::1] "max. difference order parameter",
+                                const int min_q[0::0] "min. MA order parameter",
+                                const int max_q[0::1] "max. MA order parameter",
+                                const int min_P[0::0] "min. seas. AR parameter",
+                                const int max_P[0::0] "max. seas. AR parameter",
+                                const int min_D[0::0] "min. seas. difference order parameter",
+                                const int max_D[0::0] "max. seas. difference order parameter",
+                                const int min_Q[0::0] "min. seas. MA order parameter",
+                                const int max_Q[0::0] "max. seas. MA order parameter",
+                                const bool with_intercept[1] "With intercept",
+                                const bool with_seasonality[0] "Seasonal ARIMA",
+                                const bool verbose[1] "Print details")
+    /* Wrapper for GUI access. */
+
+    bundle model = null
+    bundle self = null
+    scalar self.verbose = verbose
+    scalar self.with_intercept = with_intercept
+    scalar self.with_seasonality = with_seasonality
+
+    scalar self.min_p = min_p
+    scalar self.max_p = max_p
+    scalar self.min_d = min_d
+    scalar self.max_d = max_d
+    scalar self.min_q = min_q
+    scalar self.max_q = max_q
+    if data_has_seasonality()
+        scalar self.min_P = min_P
+        scalar self.max_P = max_p
+        scalar self.min_D = min_D
+        scalar self.max_D = max_D
+        scalar self.min_Q = min_Q
+        scalar self.max_Q = max_Q
+    endif
+    bundle model = auto_arima(y, xlist, self)
+
+    if model.error == TRUE
+        printError("something went wrong.")
+    endif
+
+    print model
+
+    return model
+end function

@@ -3,9 +3,11 @@
 <gretl-function-package name="auto_arima" needs-time-series-data="true" minver="2020b">
 <author email="atecon@posteo.de">Artur Tarassow</author>
 <version>0.5</version>
-<date>2020-07-19</date>
+<date>2020-07-20</date>
 <description>Return best ARIMA model by means of information criteria</description>
-<tags>C22</tags>
+<tags>C22 C52</tags>
+<label>Automatic ARIMA</label>
+<menu-attachment>MAINWIN/Model/TSModels</menu-attachment>
 <help>
 Fit best SARIMA(X) model to univariate time series.
 
@@ -102,7 +104,7 @@ auto_arima() function. Currently, the following options are supported:
 Default SARIMA parameter values:
 --------------------------------
 * min_p          :  scalar, minimum autoregressive order (default 0)
-* max_p          :  scalar, maximum autoregressive order (default 1)
+* max_p          :  scalar, maximum autoregressive order (default 4)
 * min_d          :  scalar, minimum order of 1-st differencing (default 0)
 * max_d          :  scalar, maximum order of 1-st differencing (default 1)
 * min_q          :  scalar, minimum moving-average order (default 0)
@@ -201,6 +203,88 @@ else
   cmd += sprintf(&quot; ; %s %s %s&quot;, self.name_yseries, self.name_xlist, self.arima_model_options_string)
 endif
 return cmd
+</code>
+</gretl-function>
+<gretl-function name="auto_arima_gui" type="bundle" pkg-role="gui-main">
+ <params count="17">
+  <param name="y" type="series" const="true">
+<description>Endogenous</description>
+  </param>
+  <param name="xlist" type="list" optional="true" const="true">
+<description>Exogenous</description>
+  </param>
+  <param name="min_p" type="int" min="0" default="1" const="true">
+<description>min. AR parameter</description>
+  </param>
+  <param name="max_p" type="int" min="0" default="4" const="true">
+<description>max. AR parameter</description>
+  </param>
+  <param name="min_d" type="int" min="0" default="0" const="true">
+<description>min. difference order parameter</description>
+  </param>
+  <param name="max_d" type="int" min="0" default="1" const="true">
+<description>max. difference order parameter</description>
+  </param>
+  <param name="min_q" type="int" min="0" default="0" const="true">
+<description>min. MA order parameter</description>
+  </param>
+  <param name="max_q" type="int" min="0" default="1" const="true">
+<description>max. MA order parameter</description>
+  </param>
+  <param name="min_P" type="int" min="0" default="0" const="true">
+<description>min. seas. AR parameter</description>
+  </param>
+  <param name="max_P" type="int" min="0" default="0" const="true">
+<description>max. seas. AR parameter</description>
+  </param>
+  <param name="min_D" type="int" min="0" default="0" const="true">
+<description>min. seas. difference order parameter</description>
+  </param>
+  <param name="max_D" type="int" min="0" default="0" const="true">
+<description>max. seas. difference order parameter</description>
+  </param>
+  <param name="min_Q" type="int" min="0" default="0" const="true">
+<description>min. seas. MA order parameter</description>
+  </param>
+  <param name="max_Q" type="int" min="0" default="0" const="true">
+<description>max. seas. MA order parameter</description>
+  </param>
+  <param name="with_intercept" type="bool" default="1" const="true">
+<description>With intercept</description>
+  </param>
+  <param name="with_seasonality" type="bool" default="0" const="true">
+<description>Seasonal ARIMA</description>
+  </param>
+  <param name="verbose" type="bool" default="1" const="true">
+<description>Print details</description>
+  </param>
+ </params>
+<code>/* Wrapper for GUI access. */
+bundle model = null
+bundle self = null
+scalar self.verbose = verbose
+scalar self.with_intercept = with_intercept
+scalar self.with_seasonality = with_seasonality
+scalar self.min_p = min_p
+scalar self.max_p = max_p
+scalar self.min_d = min_d
+scalar self.max_d = max_d
+scalar self.min_q = min_q
+scalar self.max_q = max_q
+if data_has_seasonality()
+  scalar self.min_P = min_P
+  scalar self.max_P = max_p
+  scalar self.min_D = min_D
+  scalar self.max_D = max_D
+  scalar self.min_Q = min_Q
+  scalar self.max_Q = max_Q
+endif
+bundle model = auto_arima(y, xlist, self)
+if model.error == TRUE
+  printError(&quot;something went wrong.&quot;)
+endif
+print model
+return model
 </code>
 </gretl-function>
 <gretl-function name="y_is_constant" type="void" private="1">
@@ -311,7 +395,7 @@ strings self.methods_supported  = defarray(&quot;exact_ml&quot;, &quot;condition
 string self.estimation_method = &quot;exact_ml&quot; # gretl built-in default
 # arima parameters
 scalar self.min_p = 0
-scalar self.max_p = 1
+scalar self.max_p = 4
 scalar self.min_d = 0
 scalar self.max_d = 1
 scalar self.min_q = 0

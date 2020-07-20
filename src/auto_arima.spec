@@ -1,11 +1,14 @@
 author = Artur Tarassow
 email = atecon@posteo.de
 version = 0.5
-date = 2020-07-19
+date = 2020-07-20
 description = Return best ARIMA model by means of information criteria
-tags = C22
+tags = C22 C52
 min-version = 2020b
-public = auto_arima print_auto_arima_results get_auto_arima_parameters get_auto_arima_command
+public = auto_arima print_auto_arima_results get_auto_arima_parameters get_auto_arima_command auto_arima_gui
 data-requirement = needs-time-series-data
 help = auto_arima_help.txt
 sample-script = auto_arima_sample.inp
+gui-main = auto_arima_gui
+label = Automatic ARIMA
+menu-attachment = MAINWIN/Model/TSModels
