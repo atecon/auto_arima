@@ -102,7 +102,7 @@ function bundle default_values (const series y)
 
     # arima parameters
     scalar self.min_p = 0
-    scalar self.max_p = 1   # TODO: $pd
+    scalar self.max_p = 1
     scalar self.min_d = 0
     scalar self.max_d = 1
     scalar self.min_q = 0
@@ -167,8 +167,7 @@ end function
 function bundle auto_arima (const series y "Endogenous",
                             const list xlist[null] "Exogenous",
                             bundle opts[null] "Parameter bundle")
-
-    # TODO: User passes a bundle with key-values referencing to min_/max_p etc
+    /* Main public function. */
 
     if !exists(opts)
         bundle opts = null
@@ -377,7 +376,6 @@ function void estimate_models (bundle *self)
     list xlist = self.xlist
 
     # Restrict the data set to the least common sample to ensure that information criteria a comparable
-    # TODO:is this offset computation correct?
     scalar offset = max(self.parameter_matrix)
     smpl +offset ;
     string self.sample_start = obslabel($t1)
