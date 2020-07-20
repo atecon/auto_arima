@@ -19,14 +19,14 @@ if EXAMPLE == 1
     series y = ldiff(LRM)
     xlist = ldiff(LRY)
 
-    # Find "best" ARIMA model
-    bundle Bout = auto_arima(y, xlist, defbundle("verbose", 1, "with_intercept", FALSE))
+    # Find "best" ARIMA model and pass some additional option
+    bundle Bout = auto_arima(y, xlist, defbundle("verbose", 1, "max_p", 4))
 
 elif EXAMPLE == 2
     series y = ldiff(gdp)
 
     # Find "best" ARIMA model
-    bundle Bout = auto_arima(y, , defbundle("verbose", 1))
+    bundle Bout = auto_arima(y)
 endif
 
 # print stuff in resulting bundle

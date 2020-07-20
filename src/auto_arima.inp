@@ -16,8 +16,8 @@ function void add_intercept_to_xlist (bundle *self)
     /* Add intercept to xlist if it should enter the model. */
 
     if !inlist(self.xlist, "const") && self.with_intercept == TRUE
-        if self.verbose == 1
-            printWarning("Intercept added to xlist as you set intercept to TRUE.")
+        if self.verbose == TRUE
+            printInfo("Intercept added to xlist as you set intercept to TRUE.")
         endif
         self.xlist += const
         self.intercept_added = TRUE
@@ -155,7 +155,7 @@ function void add_data_to_bundle (bundle *self,
     /* */
 
     series self.y = y
-    list self.xlist += xlist
+    list self.xlist = xlist
     add_intercept_to_xlist(&self)
 
     self.name_yseries = argname(y)
