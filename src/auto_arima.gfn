@@ -174,8 +174,8 @@ print_table_border()
 errorif(model_rank &gt; self.n_combinations, sprintf(&quot;Selected model rank (%d) exceeds number of models estimated (%d).&quot;, model_rank, self.n_combinations))
 matrix pos_info_criteria = instrings(get_info_criteria_names(), info_criteria)
 errorif(!nelem(pos_info_criteria), sprintf(&quot;Information criteria '%s' unknown.&quot;, info_criteria))
-scalar parameter_combination = self.model_rank_by_criteria[model_rank, pos_info_criteria]
-return self.parameter_matrix[parameter_combination,]
+matrix mask = self.model_rank_by_criteria[, pos_info_criteria] .= model_rank
+return selifr(self.parameter_matrix, mask)
 </code>
 </gretl-function>
 <gretl-function name="get_auto_arima_command" type="string">
@@ -223,8 +223,8 @@ endif
  </params>
 <code>/* Add intercept to xlist if it should enter the model. */
 if !inlist(self.xlist, &quot;const&quot;) &amp;&amp; self.with_intercept == TRUE
-  if self.verbose == 1
-    printWarning(&quot;Intercept added to xlist as you set intercept to TRUE.&quot;)
+  if self.verbose == TRUE
+    printInfo(&quot;Intercept added to xlist as you set intercept to TRUE.&quot;)
   endif
   self.xlist += const
   self.intercept_added = TRUE
@@ -360,7 +360,7 @@ scalar self.n_combinations = n
  </params>
 <code>/* */
 series self.y = y
-list self.xlist += xlist
+list self.xlist = xlist
 add_intercept_to_xlist(&amp;self)
 self.name_yseries = argname(y)
 string self.name_xlist = &quot;&quot;
@@ -694,14 +694,14 @@ endif
 clear
 set verbose off
 
-#include auto_arima.gfn
-include &quot;/home/ninja/repo/auto_arima/src/auto_arima.inp&quot; --force
+include auto_arima.gfn
 
 # Select an example
 scalar EXAMPLE = 1
 
 if EXAMPLE == 1
-    open denmark.gdt -q -p     # quarterly frequency
+    # Box and Jenkins &quot;Series G&quot; (airline passengers)
+    open bjg.gdt -p -q         # monthly frequency
 elif EXAMPLE == 2
     open hendry_jae.gdt -q -p  # annual frequency
 endif
@@ -709,17 +709,16 @@ endif
 
 list xlist = null
 if EXAMPLE == 1
-    series y = ldiff(LRM)
-    xlist = ldiff(LRY)
+    series y = lg
 
-    # Find &quot;best&quot; ARIMA model
-    bundle Bout = auto_arima(y, xlist, defbundle(&quot;verbose&quot;, 1, &quot;with_intercept&quot;, FALSE))
+    # Find &quot;best&quot; ARIMA model and pass some additional option
+    bundle Bout = auto_arima(y, , defbundle(&quot;verbose&quot;, 1, &quot;max_p&quot;, 4))
 
 elif EXAMPLE == 2
     series y = ldiff(gdp)
 
     # Find &quot;best&quot; ARIMA model
-    bundle Bout = auto_arima(y, , defbundle(&quot;verbose&quot;, 1))
+    bundle Bout = auto_arima(y)
 endif
 
 # print stuff in resulting bundle
@@ -733,7 +732,7 @@ print_auto_arima_results(Bout)
 matrix arima_params = get_auto_arima_parameters(Bout, &quot;aic&quot;, 1)
 print arima_params
 
-matrix arima_params = get_auto_arima_parameters(Bout, &quot;aicc&quot;, 1)
+matrix arima_params = get_auto_arima_parameters(Bout, &quot;aicc&quot;, 2)
 print arima_params
 
 
