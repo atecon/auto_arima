@@ -72,6 +72,16 @@ Return:
 String holding the gretl/ hansl command for estimating the selected model.
 -----------------------------------------------------------------------
 
+-----------------------------------------------------------------------
+Function:       auto_arima_gui()
+
+Arguments:
+
+Return:
+A wrapper for the GUI. Prints summary results and returns a bundle with model results.
+-----------------------------------------------------------------------
+
+
 
 The optional 'opts' bundle:
 ----------------------------

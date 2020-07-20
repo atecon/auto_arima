@@ -311,6 +311,13 @@ function void print_auto_arima_results (const bundle self)
 end function
 
 
+function void print_auto_arima_results_gui (bundle *self)
+    /* Print summary -- for GUI only. Simply a wrapper as "bundle-print" (spec-file) needs the argument in pointer form. */
+
+    print_auto_arima_results(self)
+end function
+
+
 function string get_auto_arima_command (const bundle self,
                                         const string info_criteria,
                                         const int model_rank)
@@ -630,9 +637,9 @@ function bundle auto_arima_gui (const series y "Endogenous",
 
     if model.error == TRUE
         printError("something went wrong.")
+    else
+        print_auto_arima_results(model)
     endif
-
-    print model
 
     return model
 end function

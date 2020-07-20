@@ -83,6 +83,16 @@ Return:
 String holding the gretl/ hansl command for estimating the selected model.
 -----------------------------------------------------------------------
 
+-----------------------------------------------------------------------
+Function:       auto_arima_gui()
+
+Arguments:
+
+Return:
+A wrapper for the GUI. Prints summary results and returns a bundle with model results.
+-----------------------------------------------------------------------
+
+
 
 The optional 'opts' bundle:
 ----------------------------
@@ -282,9 +292,18 @@ endif
 bundle model = auto_arima(y, xlist, self)
 if model.error == TRUE
   printError(&quot;something went wrong.&quot;)
+else
+  print_auto_arima_results(model)
 endif
-print model
 return model
+</code>
+</gretl-function>
+<gretl-function name="print_auto_arima_results_gui" type="void" pkg-role="bundle-print">
+ <params count="1">
+  <param name="self" type="bundleref"/>
+ </params>
+<code>/* Print summary -- for GUI only. Simply a wrapper as &quot;bundle-print&quot; (spec-file) needs the argument in pointer form. */
+print_auto_arima_results(self)
 </code>
 </gretl-function>
 <gretl-function name="y_is_constant" type="void" private="1">
@@ -796,7 +815,7 @@ set verbose off
 include auto_arima.gfn
 
 # Select an example
-scalar EXAMPLE = 1
+scalar EXAMPLE = 2
 
 if EXAMPLE == 1
     # Box and Jenkins &quot;Series G&quot; (airline passengers)
