@@ -106,7 +106,7 @@ function bundle default_values (const series y)
     scalar self.min_d = 0
     scalar self.max_d = 1
     scalar self.min_q = 0
-    scalar self.max_q = 1
+    scalar self.max_q = 4
 
     # seasonal arima parameters
     scalar self.min_D = 0
@@ -551,7 +551,6 @@ function matrix sarima_parameter_matrix (const bundle self)
 end function
 
 
-# TODO: many more options may be added -- see 'help arima'
 function void prepare_arima_options_string (bundle *self)
     /* Compile various option strings for arima command. */
 

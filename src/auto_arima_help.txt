@@ -4,10 +4,11 @@ Returns best SARIMAX model according to either AIC, AICc, BIC or HQC value. The 
 
 This is an alternative package to the existing "armax" package written by Yi-Nung Yang.
 
-The features of the auto_arima package which are missing in "armax" are:
+The features of the auto_arima package are:
 - Consideration of seasonal ARIMA models with and without exogenous regressors.
-- Simpler API compared to "armax".
-- Public convenience functions for the user.
+- Simple API.
+- GUI access through the gretl menu.
+- Public convenience functions for the user for summarizing results, or retrieving the gretl ARIMA command of the 'best' model.
 - Source code is tested by means of unit-tests to minimize bugs.
 
 Please ask questions and report bugs on the gretl mailing list if possible. Alternatively, create an issue ticket on the github repo (see below).
@@ -28,7 +29,6 @@ opts:           bundle, Bundle for passing SARIMA parameters and further
 
 Return:
 Bundle comprising the various items.
-
 -----------------------------------------------------------------------
 
 -----------------------------------------------------------------------
@@ -107,7 +107,7 @@ Default SARIMA parameter values:
 * min_d          :  scalar, minimum order of 1-st differencing (default 0)
 * max_d          :  scalar, maximum order of 1-st differencing (default 1)
 * min_q          :  scalar, minimum moving-average order (default 0)
-* max_q          :  scalar, maximum moving-average order (default 1)
+* max_q          :  scalar, maximum moving-average order (default 4)
 * min_P          :  scalar, minimum seasonal moving-average order (default 0)
 * max_P          :  scalar, maximum seasonal moving-average order (default 1)
 * min_D          :  scalar, minimum order of seasonal-differencing (default 0)

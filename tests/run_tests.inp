@@ -18,7 +18,7 @@ function void test_default_values (const series y)
     assert_equal_num(B.min_p, 0)
     assert_equal_num(B.max_p, 4)
     assert_equal_num(B.min_q, 0)
-    assert_equal_num(B.max_q, 1)
+    assert_equal_num(B.max_q, 4)
 
     assert_equal_num(B.min_D, 0)
     assert_equal_num(B.max_D, 1)
@@ -43,7 +43,7 @@ function void test_default_values (const series y)
     assert_equal_num(B.min_p, 0)
     assert_equal_num(B.max_p, 4)
     assert_equal_num(B.min_q, 0)
-    assert_equal_num(B.max_q, 1)
+    assert_equal_num(B.max_q, 4)
 
     assert_equal_num(B.min_D, 0)
     assert_equal_num(B.max_D, 0)
@@ -206,7 +206,7 @@ function void test_add_n_combinations (const series y)
 
     bundle B = default_values(y)
     add_n_combinations(&B)
-    assert_equal_num(B.n_combinations, 20)
+    assert_equal_num(B.n_combinations, 50)
 end function
 test_add_n_combinations(nile)
 
@@ -218,7 +218,7 @@ function void test_add_n_combinations (const series y)
 
     bundle B = default_values(y)
     add_n_combinations(&B)
-    assert_equal_num(B.n_combinations, 160)
+    assert_equal_num(B.n_combinations, 400)
 end function
 test_add_n_combinations(LRM)
 

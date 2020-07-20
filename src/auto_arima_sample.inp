@@ -31,7 +31,7 @@ endif
 # print stuff in resulting bundle
 print Bout
 
-# TODO: Print summary of results for all info-crit
+# Print summary of results for all info-crit
 print_auto_arima_results(Bout)
 
 
