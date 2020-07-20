@@ -204,9 +204,9 @@ function matrix get_auto_arima_parameters (const bundle self,
 
     errorif(!nelem(pos_info_criteria), sprintf("Information criteria '%s' unknown.", info_criteria))
 
-    scalar parameter_combination = self.model_rank_by_criteria[model_rank, pos_info_criteria]
+    matrix mask = self.model_rank_by_criteria[, pos_info_criteria] .= model_rank
 
-    return self.parameter_matrix[parameter_combination,]
+    return selifr(self.parameter_matrix, mask)
 end function
 
 

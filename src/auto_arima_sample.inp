@@ -40,7 +40,7 @@ print_auto_arima_results(Bout)
 matrix arima_params = get_auto_arima_parameters(Bout, "aic", 1)
 print arima_params
 
-matrix arima_params = get_auto_arima_parameters(Bout, "aicc", 1)
+matrix arima_params = get_auto_arima_parameters(Bout, "aicc", 2)
 print arima_params
 
 
