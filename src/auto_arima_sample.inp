@@ -8,7 +8,8 @@ include "/home/ninja/repo/auto_arima/src/auto_arima.inp" --force
 scalar EXAMPLE = 1
 
 if EXAMPLE == 1
-    open denmark.gdt -q -p     # quarterly frequency
+    # Box and Jenkins "Series G" (airline passengers)
+    open bjg.gdt -p -q         # monthly frequency
 elif EXAMPLE == 2
     open hendry_jae.gdt -q -p  # annual frequency
 endif
@@ -16,11 +17,10 @@ endif
 
 list xlist = null
 if EXAMPLE == 1
-    series y = ldiff(LRM)
-    xlist = ldiff(LRY)
+    series y = lg
 
     # Find "best" ARIMA model and pass some additional option
-    bundle Bout = auto_arima(y, xlist, defbundle("verbose", 1, "max_p", 4))
+    bundle Bout = auto_arima(y, , defbundle("verbose", 1, "max_p", 4))
 
 elif EXAMPLE == 2
     series y = ldiff(gdp)
