@@ -1,13 +1,14 @@
 clear
 set verbose off
 
-include auto_arima.gfn
+#include auto_arima.gfn
+include "/home/ninja/repo/auto_arima/src/auto_arima.inp" --force
 
 # Select an example
-scalar EXAMPLE = 2
+scalar EXAMPLE = 1
 
 if EXAMPLE == 1
-    open denmark.gdt -q -p     # quarterlyfrequency
+    open denmark.gdt -q -p     # quarterly frequency
 elif EXAMPLE == 2
     open hendry_jae.gdt -q -p  # annual frequency
 endif
@@ -18,13 +19,13 @@ if EXAMPLE == 1
     series y = ldiff(LRM)
     xlist = ldiff(LRY)
 
-    # Run several ARIMA models
-    bundle Bout = auto_arima(y, xlist, defbundle("verbose", 1))
+    # Find "best" ARIMA model
+    bundle Bout = auto_arima(y, xlist, defbundle("verbose", 1, "with_intercept", FALSE))
 
 elif EXAMPLE == 2
     series y = ldiff(gdp)
 
-    # Run several ARIMA models
+    # Find "best" ARIMA model
     bundle Bout = auto_arima(y, , defbundle("verbose", 1))
 endif
 
@@ -33,6 +34,7 @@ print Bout
 
 # TODO: Print summary of results for all info-crit
 print_auto_arima_results(Bout)
+
 
 # Print coefficient vector of the n-th best model using the AIC
 matrix arima_params = get_auto_arima_parameters(Bout, "aic", 1)

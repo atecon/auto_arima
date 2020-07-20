@@ -17,17 +17,40 @@ function void add_intercept_to_xlist (bundle *self)
 
     if !inlist(self.xlist, "const") && self.with_intercept == TRUE
         if self.verbose == 1
-            printInfo("Intercept added to xlist as you set intercept == TRUE")
+            printWarning("Intercept added to xlist as you set intercept to TRUE.")
         endif
         self.xlist += const
+        self.intercept_added = TRUE
     endif
 end function
 
+function void check_intercept_settings (bundle *self)
+    /* */
+
+    if inlist(self.xlist, "const") && self.with_intercept == FALSE
+        printError(sprintf("You set the parameter 'with_intercept' to FALSE but \n\
+          included it to the list of exogenous. Abort."))
+
+        self.error = TRUE
+    endif
+end function
+
+function void drop_intercept_from_xlist (bundle *self)
+    /* Drop intercept from xlist if it should not enter the model. */
+
+    if inlist(self.xlist, "const") && self.with_intercept == FALSE
+        self.xlist -= const
+        if self.verbose
+            printInfo("Intercept has been dropped.")
+        endif
+    endif
+end function
 
 function void do_initial_checks (bundle *self)
     /* Perform initial checks and drop optionally intercept. */
 
     y_is_constant(&self)
+    check_intercept_settings(&self)
     drop_intercept_from_xlist(&self)
 end function
 
@@ -39,7 +62,7 @@ end function
 
 
 function bundle set_bundle_and_get_defaults (const series y,
-                                            bundle opts[null])
+                                             bundle opts[null])
     /* Compile self bundle by merging eventual information
     from 'opts' bundle. */
 
@@ -69,6 +92,7 @@ function bundle default_values (const series y)
     scalar self.error = FALSE
     scalar self.y_is_constant = FALSE
     scalar self.with_intercept = TRUE
+    scalar self.intercept_added = FALSE
     scalar self.with_seasonality = data_has_seasonality()
     scalar self.verbose = 1
     list self.xlist = null
@@ -126,17 +150,17 @@ end function
 
 
 function void add_data_to_bundle (bundle *self,
-                                const series y,
-                                const list xlist[null])
+                                  const series y,
+                                  const list xlist[null])
     /* */
 
     series self.y = y
-    list self.xlist = xlist
+    list self.xlist += xlist
+    add_intercept_to_xlist(&self)
 
     self.name_yseries = argname(y)
     string self.name_xlist = ""
     self.name_xlist = (nelem(xlist)) ? argname(xlist) : self.name_xlist
-
 end function
 
 
@@ -170,8 +194,8 @@ function bundle auto_arima (const series y "Endogenous",
 end function
 
 function matrix get_auto_arima_parameters (const bundle self,
-                                            const string info_criteria,
-                                            const int model_rank[1::])
+                                           const string info_criteria,
+                                           const int model_rank[1::])
     /* Retrieve the vector of ARIMA parameters of the the i-th best model for a specific information criterion. */
 
     errorif(model_rank > self.n_combinations, sprintf("Selected model rank (%d) exceeds number of models estimated (%d).", model_rank, self.n_combinations))
@@ -264,6 +288,7 @@ end function
 function void print_auto_arima_results (const bundle self)
     /* Summarize parameter results for each information criteria. */
 
+    errorif(self.error == TRUE, "The auto_arima() function throw some error. Please check.")
     print_table_border()
     print_summary_intro(self)
     print_table_header()
@@ -277,13 +302,23 @@ function string get_auto_arima_command (const bundle self,
                                         const int model_rank)
     /* Compile gretl command of a model selected by information criteria and rank. */
 
+    errorif(self.error == TRUE, "The auto_arima() function throw some error. Please check.")
     matrix beta = get_auto_arima_parameters(self, info_criteria, model_rank)
 
     string cmd = sprintf("arima %d %d %d", beta[1], beta[2], beta[3])
     if data_has_seasonality()
         cmd += sprintf(" ; %d %d %d", beta[4], beta[5], beta[6])
     endif
-    cmd += sprintf(" ; %s %s %s", self.name_yseries, self.name_xlist, self.arima_model_options_string)
+
+    if self.with_intercept == TRUE && self.intercept_added == TRUE
+        # passed xlist did not include 'const'
+        cmd += sprintf(" ; %s const %s %s", self.name_yseries, self.name_xlist, self.arima_model_options_string)
+        #elif self.with_intercept == TRUE && self.intercept_added == FALSE
+        # passed xlist did already include 'const'
+        #    cmd += sprintf(" ; %s %s %s", self.name_yseries, self.name_xlist, self.arima_model_options_string)
+    else
+        cmd += sprintf(" ; %s %s %s", self.name_yseries, self.name_xlist, self.arima_model_options_string)
+    endif
 
     return cmd
 end function
@@ -306,26 +341,26 @@ end function
 
 
 function void get_parameters (const matrix parameter_matrix,
-                            scalar *p,
-                            scalar *d,
-                            scalar *q,
-                            scalar *P[null],
-                            scalar *D[null],
-                            scalar *Q[null])
-     /* Retrieve sarima parameters from overall parameter matrix. */
+                              scalar *p,
+                              scalar *d,
+                              scalar *q,
+                              scalar *P[null],
+                              scalar *D[null],
+                              scalar *Q[null])
+    /* Retrieve sarima parameters from overall parameter matrix. */
 
-     scalar p = parameter_matrix[1]
-     scalar d = parameter_matrix[2]
-     scalar q = parameter_matrix[3]
-     if data_has_seasonality()
+    scalar p = parameter_matrix[1]
+    scalar d = parameter_matrix[2]
+    scalar q = parameter_matrix[3]
+    if data_has_seasonality()
         scalar P = parameter_matrix[4]
         scalar D = parameter_matrix[5]
         scalar Q = parameter_matrix[6]
-     endif
- end function
+    endif
+end function
 
 function matrix initialize_criteria_values_mat (const bundle self)
-    /* code description
+/* code description
     return: type, description */
 
     matrix criteria_values = mshape(NA, rows(self.parameter_matrix), nelem(get_info_criteria_names()))
@@ -355,7 +390,7 @@ end function
 
 
 function string final_model_options_string (const bundle self)
-    /* code description
+/* code description
     return: type, description */
 
     return (self.verbose == 0) ? self.arima_model_options_string : (self.verbose == 1 ? "--quiet" : "--verbose")
@@ -363,16 +398,15 @@ end function
 
 
 function matrix arima_estimation_get_info_crits (const series y,
-                                                const list xlist,
-                                                const bundle self,
-                                                const int parameter_set_id[1::])
+                                                 const list xlist,
+                                                 const bundle self,
+                                                 const int parameter_set_id[1::])
     /* Actual estimation of SARIMAX model and computation of information criteria. */
 
     string arima_model_options_string = final_model_options_string(self)
     scalar p, d, q, P, D, Q
     strings criteria_names = get_info_criteria_names()
     matrix criteria_values = mshape(NA, 1, nelem(criteria_names))
-
 
     get_parameters(self.parameter_matrix[parameter_set_id,], &p, &d, &q, &P, &D, &Q)
 
@@ -508,18 +542,6 @@ function void prepare_arima_options_string (bundle *self)
     arima_model_options_string += (self.estimation_method == "conditional_ml") ? "--conditional" : ""
 
     self.arima_model_options_string = arima_model_options_string
-end function
-
-
-function void drop_intercept_from_xlist (bundle *self)
-    /* Drop intercept from xlist if it should not enter the model. */
-
-    if inlist(self.xlist, "const") && self.with_intercept == FALSE
-        self.xlist -= const
-        if self.verbose
-            printInfo("Intercept has been dropped.")
-        endif
-    endif
 end function
 
 
