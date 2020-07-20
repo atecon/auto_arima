@@ -709,8 +709,7 @@ endif
 clear
 set verbose off
 
-#binclude auto_arima.gfn
-include &quot;/home/ninja/repo/auto_arima/src/auto_arima.inp&quot; --force
+include auto_arima.gfn
 
 # Select an example
 scalar EXAMPLE = 1
