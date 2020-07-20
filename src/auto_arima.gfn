@@ -411,10 +411,26 @@ loop j=1..rows(self.parameter_matrix)
   printf &quot;%s &quot;, row_labels[j]
   # actual value plus asterisks indicating rank of model specification
   loop i=1..nelem(criteria_names)
-    printf &quot;%12.3f%s&quot;, self.criteria_values[j,i], asterisks(self.model_rank_by_criteria[j,i])
+    string asterisk_str = asterisks(self.model_rank_by_criteria[j,i])
+    printf &quot;%14.3f%s&quot;, self.criteria_values[j,i], asterisk_str
+    print_whitespaces(asterisk_str)
   endloop
   printf &quot;\n&quot;
 endloop
+</code>
+</gretl-function>
+<gretl-function name="print_whitespaces" type="void" private="1">
+ <params count="1">
+  <param name="asterisk_str" type="string" const="true"/>
+ </params>
+<code>/* */
+if strlen(asterisk_str) == 0
+  printf &quot;   &quot;
+elif strlen(asterisk_str) == 1
+  printf &quot;  &quot;
+elif strlen(asterisk_str) == 2
+  printf &quot; &quot;
+endif
 </code>
 </gretl-function>
 <gretl-function name="print_summary_intro" type="void" private="1">
@@ -430,7 +446,7 @@ printf &quot;\nCommon sample used for all models: %s to %s&quot;, self.sample_st
 </code>
 </gretl-function>
 <gretl-function name="print_table_border" type="void" private="1">
-<code>printf &quot;\n*******************************************************************\n&quot;
+<code>printf &quot;\n***************************************************************************\n&quot;
 </code>
 </gretl-function>
 <gretl-function name="print_table_header" type="void" private="1">
@@ -439,7 +455,7 @@ printf &quot;\n\nARIMA-spec. \t&quot;
 loop foreach i criteria_names
   printf &quot;$i \t\t&quot;
 endloop
-printf &quot;\n-----------------------------------------------------------\n&quot;
+printf &quot;\n---------------------------------------------------------------------------\n&quot;
 </code>
 </gretl-function>
 <gretl-function name="rank_models_by_criteria" type="void" private="1">
@@ -693,7 +709,8 @@ endif
 clear
 set verbose off
 
-include auto_arima.gfn
+#binclude auto_arima.gfn
+include &quot;/home/ninja/repo/auto_arima/src/auto_arima.inp&quot; --force
 
 # Select an example
 scalar EXAMPLE = 1
@@ -723,7 +740,7 @@ endif
 # print stuff in resulting bundle
 print Bout
 
-# Print summary of results for all info-crit
+# TODO: Print summary of results for all info-crit
 print_auto_arima_results(Bout)
 
 

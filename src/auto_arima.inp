@@ -254,11 +254,26 @@ function void print_table_and_row_labels (const bundle self)
 
         # actual value plus asterisks indicating rank of model specification
         loop i=1..nelem(criteria_names)
-            printf "%12.3f%s", self.criteria_values[j,i], asterisks(self.model_rank_by_criteria[j,i])
+            string asterisk_str = asterisks(self.model_rank_by_criteria[j,i])
+            printf "%14.3f%s", self.criteria_values[j,i], asterisk_str
+            print_whitespaces(asterisk_str)
         endloop
         printf "\n"
     endloop
 end function
+
+function void print_whitespaces (const string asterisk_str)
+    /* */
+
+    if strlen(asterisk_str) == 0
+        printf "   "
+    elif strlen(asterisk_str) == 1
+        printf "  "
+    elif strlen(asterisk_str) == 2
+        printf " "
+    endif
+end function
+
 
 function void print_summary_intro (const bundle self)
     printf "\t\tSummary results of ARIMA model combinations\n\n"
@@ -271,7 +286,7 @@ end function
 
 
 function void print_table_border (void)
-    printf "\n*******************************************************************\n"
+    printf "\n***************************************************************************\n"
 end function
 
 function void print_table_header (void)
@@ -281,7 +296,7 @@ function void print_table_header (void)
     loop foreach i criteria_names
         printf "$i \t\t"
     endloop
-    printf "\n-----------------------------------------------------------\n"
+    printf "\n---------------------------------------------------------------------------\n"
 end function
 
 function void print_auto_arima_results (const bundle self)

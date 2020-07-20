@@ -1,7 +1,8 @@
 clear
 set verbose off
 
-include auto_arima.gfn
+#binclude auto_arima.gfn
+include "/home/ninja/repo/auto_arima/src/auto_arima.inp" --force
 
 # Select an example
 scalar EXAMPLE = 1
@@ -31,7 +32,7 @@ endif
 # print stuff in resulting bundle
 print Bout
 
-# Print summary of results for all info-crit
+# TODO: Print summary of results for all info-crit
 print_auto_arima_results(Bout)
 
 
