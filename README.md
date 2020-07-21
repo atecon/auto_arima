@@ -6,6 +6,7 @@ This is an alternative package to the existing gretl *armax* package written by 
 
 # Features
 - Consideration of seasonal ARIMA models with and without exogenous regressors.
+- Fine tuning the parameter space to evaluate.
 - Simple API.
 - GUI access through the gretl menu.
 - Public convenience functions for the user for summarizing results, or retrieving the gretl ARIMA command of the 'best' model.
@@ -19,8 +20,13 @@ Get the package from the gretl package server and install it:
 ```
 pkg install auto_arima
 ```
+## GUI interface
+Once the package is installed, the user can access the GUI interface via the "Model --> Univariate time series --> Automatic ARIMA" menu. The interface will look like this:
 
-## Simple example
+![sample](https://github.com/atecon/auto_arima/raw/master/gui.png)
+
+
+## Simple scripting example
 Here is a sample script on how to use it (see also: https://raw.githubusercontent.com/atecon/auto_arima/master/src/auto_arima_sample.inp):
 
 First, load the package and open a monthly time-series data set. In this example, we pass only the endogenous series ```lg``` (144 observations) to the main function ```auto_arima```. However, the interested user can also pass a list of exogenous variables as the 2nd argument to ```auto_arima```.
