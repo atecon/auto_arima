@@ -490,8 +490,6 @@ function void test_add_data_to_bundle (const series y,
     scalar B.verbose = TRUE
     add_data_to_bundle(&B, y)
 
-    assert_equal_str(B.name_yseries, "y")
-    assert_equal_str(B.name_xlist, "")
     assert_equal_num(nobs(B.y), 55)
     assert_false(nelem(B.xlist))
 
@@ -500,8 +498,6 @@ function void test_add_data_to_bundle (const series y,
     scalar B.verbose = TRUE
     add_data_to_bundle(&B, y)
 
-    assert_equal_str(B.name_yseries, "y")
-    assert_equal_str(B.name_xlist, "")
     assert_equal_num(nobs(B.y), 55)
     assert_equal_num(nelem(B.xlist), 1)
 
@@ -511,8 +507,6 @@ function void test_add_data_to_bundle (const series y,
     scalar B.verbose = TRUE
     add_data_to_bundle(&B, y, L)
 
-    assert_equal_str(B.name_yseries, "y")
-    assert_equal_str(B.name_xlist, "L")
     assert_equal_num(nobs(B.y), 55)
     assert_equal_num(nelem(B.xlist), 3)
 
@@ -521,8 +515,6 @@ function void test_add_data_to_bundle (const series y,
     scalar B.verbose = TRUE
     add_data_to_bundle(&B, y, L)
 
-    assert_equal_str(B.name_yseries, "y")
-    assert_equal_str(B.name_xlist, "L")
     assert_equal_num(nobs(B.y), 55)
     assert_equal_num(nelem(B.xlist), 2)
 end function

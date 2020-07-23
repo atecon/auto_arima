@@ -157,10 +157,6 @@ function void add_data_to_bundle (bundle *self,
     series self.y = y
     list self.xlist = xlist
     add_intercept_to_xlist(&self)
-
-    self.name_yseries = argname(y)
-    string self.name_xlist = ""
-    self.name_xlist = (nelem(xlist)) ? argname(xlist) : self.name_xlist
 end function
 
 
@@ -175,6 +171,10 @@ function bundle auto_arima (const series y "Endogenous",
 
     bundle self = set_bundle_and_get_defaults(y, opts)
     add_data_to_bundle(&self, y, xlist)
+
+    string self.name_yseries = argname(y)
+    string self.name_xlist = (nelem(xlist)) ? argname(xlist) : ""
+
     do_initial_checks(&self)
     if self.error
         return self
@@ -595,18 +595,18 @@ end function
 
 function bundle auto_arima_gui (const series y "Endogenous",
                                 const list xlist[null] "Exogenous",
-                                const int min_p[0::1] "min. AR parameter",
-                                const int max_p[0::4] "max. AR parameter",
-                                const int min_d[0::0] "min. difference order parameter",
-                                const int max_d[0::1] "max. difference order parameter",
-                                const int min_q[0::0] "min. MA order parameter",
-                                const int max_q[0::1] "max. MA order parameter",
-                                const int min_P[0::0] "min. seas. AR parameter",
-                                const int max_P[0::0] "max. seas. AR parameter",
-                                const int min_D[0::0] "min. seas. difference order parameter",
-                                const int max_D[0::0] "max. seas. difference order parameter",
-                                const int min_Q[0::0] "min. seas. MA order parameter",
-                                const int max_Q[0::0] "max. seas. MA order parameter",
+                                const int min_p[0::1] "min. AR parameter, p",
+                                const int max_p[0::4] "max. AR parameter, p",
+                                const int min_d[0::0] "min. difference order parameter, d",
+                                const int max_d[0::1] "max. difference order parameter, d",
+                                const int min_q[0::0] "min. MA order parameter, q",
+                                const int max_q[0::1] "max. MA order parameter, q",
+                                const int min_P[0::0] "min. seas. AR parameter, P",
+                                const int max_P[0::0] "max. seas. AR parameter, P",
+                                const int min_D[0::0] "min. seas. difference order parameter, D",
+                                const int max_D[0::0] "max. seas. difference order parameter, D",
+                                const int min_Q[0::0] "min. seas. MA order parameter, Q",
+                                const int max_Q[0::0] "max. seas. MA order parameter, Q",
                                 const bool with_intercept[1] "With intercept",
                                 const bool with_seasonality[0] "Seasonal ARIMA",
                                 const bool verbose[1] "Print details")

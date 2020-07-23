@@ -1,8 +1,9 @@
 Fit best SARIMA(X) model to univariate time series.
 
-Returns best SARIMAX model according to either AIC, AICc, BIC or HQC value. The function conducts a search over possible model within the order constraints provided.
+Returns best SARIMAX model according to either AIC, AICc, BIC or HQC value. The function conducts a (brute force) search over possible model within the order constraints provided.
 
-This is an alternative package to the existing "armax" package written by Yi-Nung Yang.
+
+This is an alternative package to the existing gretl armax package written by Yi-Nung Yang which has some limitations, e.g. it does only work for ARMA type models.
 
 The features of the auto_arima package are:
 - Consideration of seasonal ARIMA models with and without exogenous regressors.
@@ -98,6 +99,8 @@ auto_arima() function. Currently, the following options are supported:
                      are not considered (default 1).
 * estimation_method: string, if "conditional_ml" use conditional maximum
                      likelihood
+* min_p, max_p, min_d, max_d, min_q, max_q, min_P, max_P, min_D, max_D, min_Q, max_Q:               Model parameters (see below for explanations)
+
 
 
 Default SARIMA parameter values:

@@ -4,7 +4,7 @@ set verbose off
 include auto_arima.gfn
 
 # Select an example
-scalar EXAMPLE = 2
+scalar EXAMPLE = 1
 
 if EXAMPLE == 1
     # Box and Jenkins "Series G" (airline passengers)
@@ -16,10 +16,10 @@ endif
 
 list xlist = null
 if EXAMPLE == 1
-    series y = lg
-
     # Find "best" ARIMA model and pass some additional option
-    bundle Bout = auto_arima(y, , defbundle("verbose", 1, "max_p", 4))
+    series foo = normal()
+    list L = foo
+    bundle Bout = auto_arima(lg, L, defbundle("verbose", 1, "max_p", 4))
 
 elif EXAMPLE == 2
     series y = ldiff(gdp)
