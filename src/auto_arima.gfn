@@ -11,9 +11,10 @@
 <help>
 Fit best SARIMA(X) model to univariate time series.
 
-Returns best SARIMAX model according to either AIC, AICc, BIC or HQC value. The function conducts a search over possible model within the order constraints provided.
+Returns best SARIMAX model according to either AIC, AICc, BIC or HQC value. The function conducts a (brute force) search over possible model within the order constraints provided.
 
-This is an alternative package to the existing &quot;armax&quot; package written by Yi-Nung Yang.
+
+This is an alternative package to the existing gretl armax package written by Yi-Nung Yang which has some limitations, e.g. it does only work for ARMA type models.
 
 The features of the auto_arima package are:
 - Consideration of seasonal ARIMA models with and without exogenous regressors.
@@ -109,6 +110,8 @@ auto_arima() function. Currently, the following options are supported:
                      are not considered (default 1).
 * estimation_method: string, if &quot;conditional_ml&quot; use conditional maximum
                      likelihood
+* min_p, max_p, min_d, max_d, min_q, max_q, min_P, max_P, min_D, max_D, min_Q, max_Q:               Model parameters (see below for explanations)
+
 
 
 Default SARIMA parameter values:
@@ -129,6 +132,10 @@ Default SARIMA parameter values:
 
 
 Changelog:
+- v0.51, July 2020:
+    + Fix bug when executing get_auto_arima_command() function: Names of endogenous series and exogenous list where not correct in every case.
+    + GUI access: Boolean parameter &quot;seasonality&quot; dropped: It is automatically checked now whether the active data set has seasonal frequency.
+
 - v0.5, July 2020:
 	+ initial release
 </help>
@@ -150,6 +157,8 @@ if !exists(opts)
 endif
 bundle self = set_bundle_and_get_defaults(y, opts)
 add_data_to_bundle(&amp;self, y, xlist)
+string self.name_yseries = argname(y)
+string self.name_xlist = (nelem(xlist)) ? argname(xlist) : &quot;&quot;
 do_initial_checks(&amp;self)
 if self.error
   return self
@@ -216,7 +225,7 @@ return cmd
 </code>
 </gretl-function>
 <gretl-function name="auto_arima_gui" type="bundle" pkg-role="gui-main">
- <params count="17">
+ <params count="16">
   <param name="y" type="series" const="true">
 <description>Endogenous</description>
   </param>
@@ -224,46 +233,43 @@ return cmd
 <description>Exogenous</description>
   </param>
   <param name="min_p" type="int" min="0" default="1" const="true">
-<description>min. AR parameter</description>
+<description>min. AR parameter, p</description>
   </param>
   <param name="max_p" type="int" min="0" default="4" const="true">
-<description>max. AR parameter</description>
+<description>max. AR parameter, p</description>
   </param>
   <param name="min_d" type="int" min="0" default="0" const="true">
-<description>min. difference order parameter</description>
+<description>min. difference order parameter, d</description>
   </param>
   <param name="max_d" type="int" min="0" default="1" const="true">
-<description>max. difference order parameter</description>
+<description>max. difference order parameter, d</description>
   </param>
   <param name="min_q" type="int" min="0" default="0" const="true">
-<description>min. MA order parameter</description>
+<description>min. MA order parameter, q</description>
   </param>
   <param name="max_q" type="int" min="0" default="1" const="true">
-<description>max. MA order parameter</description>
+<description>max. MA order parameter, q</description>
   </param>
   <param name="min_P" type="int" min="0" default="0" const="true">
-<description>min. seas. AR parameter</description>
+<description>min. seas. AR parameter, P</description>
   </param>
   <param name="max_P" type="int" min="0" default="0" const="true">
-<description>max. seas. AR parameter</description>
+<description>max. seas. AR parameter, P</description>
   </param>
   <param name="min_D" type="int" min="0" default="0" const="true">
-<description>min. seas. difference order parameter</description>
+<description>min. seas. difference order parameter, D</description>
   </param>
   <param name="max_D" type="int" min="0" default="0" const="true">
-<description>max. seas. difference order parameter</description>
+<description>max. seas. difference order parameter, D</description>
   </param>
   <param name="min_Q" type="int" min="0" default="0" const="true">
-<description>min. seas. MA order parameter</description>
+<description>min. seas. MA order parameter, Q</description>
   </param>
   <param name="max_Q" type="int" min="0" default="0" const="true">
-<description>max. seas. MA order parameter</description>
+<description>max. seas. MA order parameter, Q</description>
   </param>
   <param name="with_intercept" type="bool" default="1" const="true">
 <description>With intercept</description>
-  </param>
-  <param name="with_seasonality" type="bool" default="0" const="true">
-<description>Seasonal ARIMA</description>
   </param>
   <param name="verbose" type="bool" default="1" const="true">
 <description>Print details</description>
@@ -274,7 +280,12 @@ bundle model = null
 bundle self = null
 scalar self.verbose = verbose
 scalar self.with_intercept = with_intercept
-scalar self.with_seasonality = with_seasonality
+scalar self.with_seasonality = FALSE
+if data_has_seasonality() == TRUE
+  scalar self.with_seasonality = TRUE
+  printInfo(&quot;Seasonality of your data set detected. Will estimate SARIMAX type of models.&quot;)
+  flush
+endif
 scalar self.min_p = min_p
 scalar self.max_p = max_p
 scalar self.min_d = min_d
@@ -465,9 +476,6 @@ scalar self.n_combinations = n
 series self.y = y
 list self.xlist = xlist
 add_intercept_to_xlist(&amp;self)
-self.name_yseries = argname(y)
-string self.name_xlist = &quot;&quot;
-self.name_xlist = (nelem(xlist)) ? argname(xlist) : self.name_xlist
 </code>
 </gretl-function>
 <gretl-function name="row_labels" type="strings" private="1">
@@ -815,7 +823,7 @@ set verbose off
 include auto_arima.gfn
 
 # Select an example
-scalar EXAMPLE = 2
+scalar EXAMPLE = 1
 
 if EXAMPLE == 1
     # Box and Jenkins &quot;Series G&quot; (airline passengers)
@@ -827,10 +835,12 @@ endif
 
 list xlist = null
 if EXAMPLE == 1
-    series y = lg
-
     # Find &quot;best&quot; ARIMA model and pass some additional option
-    bundle Bout = auto_arima(y, , defbundle(&quot;verbose&quot;, 1, &quot;max_p&quot;, 4))
+    series foo = normal()
+    list L = foo                # add an exogenous
+
+    # Set &quot;max_p&quot; manually to 6
+    bundle Bout = auto_arima(lg, L, defbundle(&quot;verbose&quot;, 1, &quot;max_p&quot;, 6))
 
 elif EXAMPLE == 2
     series y = ldiff(gdp)

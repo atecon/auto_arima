@@ -121,5 +121,9 @@ Default SARIMA parameter values:
 
 
 Changelog:
+- v0.51, July 2020:
+    + Fix bug when executing get_auto_arima_command() function: Names of endogenous series and exogenous list where not correct in every case.
+    + GUI access: Boolean parameter "seasonality" dropped: It is automatically checked now whether the active data set has seasonal frequency.
+
 - v0.5, July 2020:
 	+ initial release

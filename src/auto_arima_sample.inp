@@ -18,8 +18,10 @@ list xlist = null
 if EXAMPLE == 1
     # Find "best" ARIMA model and pass some additional option
     series foo = normal()
-    list L = foo
-    bundle Bout = auto_arima(lg, L, defbundle("verbose", 1, "max_p", 4))
+    list L = foo                # add an exogenous
+
+    # Set "max_p" manually to 6
+    bundle Bout = auto_arima(lg, L, defbundle("verbose", 1, "max_p", 6))
 
 elif EXAMPLE == 2
     series y = ldiff(gdp)
