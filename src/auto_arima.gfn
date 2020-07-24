@@ -3,7 +3,7 @@
 <gretl-function-package name="auto_arima" needs-time-series-data="true" minver="2020b">
 <author email="atecon@posteo.de">Artur Tarassow</author>
 <version>0.51</version>
-<date>2020-07-23</date>
+<date>2020-07-24</date>
 <description>Return best ARIMA model by means of information criteria</description>
 <tags>C22 C52</tags>
 <label>Automatic ARIMA</label>
@@ -135,6 +135,7 @@ Changelog:
 - v0.51, July 2020:
     + Fix bug when executing get_auto_arima_command() function: Names of endogenous series and exogenous list where not correct in every case.
     + GUI access: Boolean parameter &quot;seasonality&quot; dropped: It is automatically checked now whether the active data set has seasonal frequency.
+    + Minor formatting improvements.
 
 - v0.5, July 2020:
 	+ initial release
@@ -557,16 +558,20 @@ printf &quot;\nCommon sample used for all models: %s to %s&quot;, self.sample_st
 </code>
 </gretl-function>
 <gretl-function name="print_table_border" type="void" private="1">
-<code>printf &quot;\n***************************************************************************\n&quot;
+<code>printf &quot;\n**********************************************************************************\n&quot;
 </code>
 </gretl-function>
 <gretl-function name="print_table_header" type="void" private="1">
 <code>strings criteria_names = get_info_criteria_names()
-printf &quot;\n\nARIMA-spec. \t&quot;
+if data_has_seasonality()
+  printf &quot;\n\nARIMA-spec.          &quot;
+else
+  printf &quot;\n\nARIMA-spec.   &quot;
+endif
 loop foreach i criteria_names
-  printf &quot;$i \t\t&quot;
+  printf &quot;$i             &quot;
 endloop
-printf &quot;\n---------------------------------------------------------------------------\n&quot;
+printf &quot;\n----------------------------------------------------------------------------------\n&quot;
 </code>
 </gretl-function>
 <gretl-function name="rank_models_by_criteria" type="void" private="1">
@@ -839,8 +844,8 @@ if EXAMPLE == 1
     series foo = normal()
     list L = foo                # add an exogenous
 
-    # Set &quot;max_p&quot; manually to 6
-    bundle Bout = auto_arima(lg, L, defbundle(&quot;verbose&quot;, 1, &quot;max_p&quot;, 6))
+    # Set &quot;max_p&quot; manually to 2
+    bundle Bout = auto_arima(lg, L, defbundle(&quot;verbose&quot;, 1, &quot;max_p&quot;, 2))
 
 elif EXAMPLE == 2
     series y = ldiff(gdp)

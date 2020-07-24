@@ -286,7 +286,7 @@ end function
 
 
 function void print_table_border (void)
-    printf "\n***************************************************************************\n"
+    printf "\n**********************************************************************************\n"
 end function
 
 function void print_table_header (void)
@@ -300,7 +300,7 @@ function void print_table_header (void)
     loop foreach i criteria_names
         printf "$i             "
     endloop
-    printf "\n---------------------------------------------------------------------------\n"
+    printf "\n----------------------------------------------------------------------------------\n"
 end function
 
 function void print_auto_arima_results (const bundle self)
