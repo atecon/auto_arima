@@ -292,9 +292,13 @@ end function
 function void print_table_header (void)
     strings criteria_names = get_info_criteria_names()
 
-    printf "\n\nARIMA-spec. \t"
+    if data_has_seasonality()
+        printf "\n\nARIMA-spec.          "
+    else
+        printf "\n\nARIMA-spec.   "
+    endif
     loop foreach i criteria_names
-        printf "$i \t\t"
+        printf "$i             "
     endloop
     printf "\n---------------------------------------------------------------------------\n"
 end function
