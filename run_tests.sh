@@ -3,7 +3,7 @@ set -e
 
 DIR=$(dirname $(realpath "$0")) 	# locate folder where this sh-script is located in
 SCRIPT="./tests/run_tests.inp"
-PROJECT="assertion"
+PROJECT="auto_arima"
 
 cd $DIR
 echo "Switched to ${DIR}"
