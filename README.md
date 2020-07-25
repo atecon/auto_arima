@@ -61,21 +61,21 @@ HQC = Hannan-Quinn criterion across all ARIMA model specification.
 
 Common sample used for all models: 1877 to 1991
 
-ARIMA-spec.     aicc            aic             bic             hqc 
+ARIMA-spec.     aicc            aic             bic             hqc
 ---------------------------------------------------------------------------
 
-0|0|0      -1022.472        -1022.508        -1017.018        -1020.280   
-0|0|1      -1033.926        -1034.033        -1025.798        -1030.691   
+0|0|0      -1022.472        -1022.508        -1017.018        -1020.280
+0|0|1      -1033.926        -1034.033        -1025.798        -1030.691
 .
 .
 .
-4|0|3      -1043.260***     -1044.618***     -1019.914        -1034.591   
-4|0|4      -1042.179        -1043.893        -1016.444        -1032.751   
-4|1|0      -1015.697        -1016.248         -999.778        -1009.563   
-4|1|1      -1031.216        -1031.994        -1012.780        -1024.195   
-4|1|2      -1039.927        -1040.974        -1019.015        -1032.061   
-4|1|3      -1038.410        -1039.768        -1015.064        -1029.741   
-4|1|4      -1036.332        -1038.046        -1010.597        -1026.905   
+4|0|3      -1043.260***     -1044.618***     -1019.914        -1034.591
+4|0|4      -1042.179        -1043.893        -1016.444        -1032.751
+4|1|0      -1015.697        -1016.248         -999.778        -1009.563
+4|1|1      -1031.216        -1031.994        -1012.780        -1024.195
+4|1|2      -1039.927        -1040.974        -1019.015        -1032.061
+4|1|3      -1038.410        -1039.768        -1015.064        -1029.741
+4|1|4      -1036.332        -1038.046        -1010.597        -1026.905
 ***************************************************************************
 ```
 
@@ -90,8 +90,8 @@ The output is:
 ```
 arima_params (1 x 6)
 
-           p            d            q            P            D            Q 
-           4            1            4            1            1            1 
+           p            d            q            P            D            Q
+           4            1            4            1            1            1
 ```
 
 Lastly, the user can retrieve the gretl command as a string variable for a specific model by means of the ```get_auto_arima_command()``` function. Also this function takes the same three arguments as ```get_auto_arima_parameters()```:
@@ -102,7 +102,7 @@ print arima_cmd
 ```
 which returns the string:
 ```
-arima 4 1 4 ; 1 1 0 ; y const  
+arima 4 1 4 ; 1 1 0 ; lg const
 ```
 
 This string can be used for estimating the selected model:
@@ -117,21 +117,21 @@ Evaluations of gradient: 46
 
 Model 1: ARIMA, using observations 1950:02-1960:12 (T = 131)
 Estimated using AS 197 (exact ML)
-Dependent variable: (1-L)(1-Ls) y
+Dependent variable: (1-L)(1-Ls) lg
 Standard errors based on Hessian
 
-             coefficient    std. error      z       p-value 
+             coefficient    std. error      z       p-value
   ----------------------------------------------------------
-  const       8.07667e-05   0.00136210    0.05930   0.9527  
+  const       8.07667e-05   0.00136210    0.05930   0.9527
   phi_1      -0.979926      0.187665     -5.222     1.77e-07 ***
   phi_2      -0.881923      0.174184     -5.063     4.12e-07 ***
   phi_3      -1.01732       0.165473     -6.148     7.85e-10 ***
-  phi_4      -0.247282      0.177538     -1.393     0.1637  
+  phi_4      -0.247282      0.177538     -1.393     0.1637
   Phi_1      -0.420615      0.0854750    -4.921     8.61e-07 ***
   theta_1     0.586332      0.199142      2.944     0.0032   ***
   theta_2     0.613887      0.183238      3.350     0.0008   ***
   theta_3     0.697329      0.193549      3.603     0.0003   ***
-  theta_4    -0.330226      0.200873     -1.644     0.1002  
+  theta_4    -0.330226      0.200873     -1.644     0.1002
 
 Mean dependent var   0.000291   S.D. dependent var   0.045848
 Mean of innovations  0.000837   S.D. of innovations  0.034423
