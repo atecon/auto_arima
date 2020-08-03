@@ -635,7 +635,7 @@ function bundle auto_arima_gui (const series y "Endogenous",
     scalar self.max_q = max_q
     if data_has_seasonality()
         scalar self.min_P = min_P
-        scalar self.max_P = max_p
+        scalar self.max_P = max_P
         scalar self.min_D = min_D
         scalar self.max_D = max_D
         scalar self.min_Q = min_Q

@@ -1,7 +1,7 @@
 author = Artur Tarassow
 email = atecon@posteo.de
-version = 0.51
-date = 2020-07-24
+version = 0.52
+date = 2020-08-03
 description = Return best ARIMA model by means of information criteria
 tags = C22 C52
 min-version = 2020b

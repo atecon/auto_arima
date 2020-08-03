@@ -2,8 +2,8 @@
 <gretl-functions>
 <gretl-function-package name="auto_arima" needs-time-series-data="true" minver="2020b">
 <author email="atecon@posteo.de">Artur Tarassow</author>
-<version>0.51</version>
-<date>2020-07-24</date>
+<version>0.52</version>
+<date>2020-08-03</date>
 <description>Return best ARIMA model by means of information criteria</description>
 <tags>C22 C52</tags>
 <label>Automatic ARIMA</label>
@@ -132,6 +132,9 @@ Default SARIMA parameter values:
 
 
 Changelog:
+- v0.52, August 2020:
+    + fix &quot;max_P&quot; parameter for GUI wrapper function
+
 - v0.51, July 2020:
     + Fix bug when executing get_auto_arima_command() function: Names of endogenous series and exogenous list where not correct in every case.
     + GUI access: Boolean parameter &quot;seasonality&quot; dropped: It is automatically checked now whether the active data set has seasonal frequency.
@@ -295,7 +298,7 @@ scalar self.min_q = min_q
 scalar self.max_q = max_q
 if data_has_seasonality()
   scalar self.min_P = min_P
-  scalar self.max_P = max_p
+  scalar self.max_P = max_P
   scalar self.min_D = min_D
   scalar self.max_D = max_D
   scalar self.min_Q = min_Q
