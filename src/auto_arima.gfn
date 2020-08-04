@@ -135,8 +135,12 @@ Changelog:
 - v0.6, August 2020:
    + Fix bug in print_table_and_row_labels(): wrong models where highlighted
      as best ones.
-   + Fix bug in get_auto_arima_parameters(): wrong n-th best model was retrieved.
-   + Fix minor bug in final_model_options_string(): verbosity option did not work right.
+   + Fix bug in get_auto_arima_parameters(): wrong n-th best model was
+     retrieved.
+   + Fix minor bug in final_model_options_string(): verbosity option did not
+     work right.
+   + Catch error when trying to retrieve information criteria in case model did
+     not converge and verbose == 0.
    + Add name of endogenous and xlist members when calling gui function.
    + Fix typos in help file.
    + Print name of endogenous and number of exogenous in summary printout
@@ -711,7 +715,10 @@ else
   loop foreach i criteria_names
     if criteria_names[i] != &quot;aicc&quot;
       string crit = sprintf(&quot;$%s&quot;, criteria_names[i])
-      criteria_values[i] = @crit
+      catch criteria_values[i] = @crit
+      if $error
+        criteria_values[i] = NA
+      endif
     else
       criteria_values[i] = aicc($model)
     endif
@@ -725,10 +732,14 @@ return criteria_values
   <param name="model" type="bundle" const="true"/>
  </params>
 <code>/* Compute the corrected AIC criteria. */
-scalar aic = model.aic
-scalar n = model.T
-scalar k = model.ncoeff
-return aic + (2 * k * (k+1)) / (n-k-1)
+scalar aicc = NA
+if inbundle(model, &quot;aic&quot;) == TRUE
+  scalar aic = model.aic
+  scalar n = model.T
+  scalar k = model.ncoeff
+  aicc = aic + (2 * k * (k+1)) / (n-k-1)
+endif
+return aicc
 </code>
 </gretl-function>
 <gretl-function name="set_sarima_parameters_to_nan" type="void" private="1">
@@ -885,7 +896,7 @@ if EXAMPLE == 1
     list L = foo                # add an exogenous
 
     # Set &quot;max_p&quot; manually to 2
-    bundle Bout = auto_arima(lg, L, defbundle(&quot;verbose&quot;, 1, &quot;max_p&quot;, 2))
+    bundle Bout = auto_arima(lg, L, defbundle(&quot;verbose&quot;, 0, &quot;max_p&quot;, 2))
 
 elif EXAMPLE == 2
     series y = ldiff(gdp)

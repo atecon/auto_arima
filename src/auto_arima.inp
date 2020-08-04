@@ -480,7 +480,10 @@ function matrix arima_estimation_get_info_crits (const series y,
         loop foreach i criteria_names
             if criteria_names[i] != "aicc"
                 string crit = sprintf("$%s", criteria_names[i])
-                criteria_values[i] = @crit
+                catch criteria_values[i] = @crit
+                if $error
+                    criteria_values[i] = NA
+                endif
             else
                 criteria_values[i] = aicc($model)
             endif
@@ -494,11 +497,17 @@ end function
 function scalar aicc (const bundle model)
     /* Compute the corrected AIC criteria. */
 
-    scalar aic = model.aic
-    scalar n = model.T
-    scalar k = model.ncoeff
+    scalar aicc = NA
 
-    return aic + (2 * k * (k+1)) / (n-k-1)
+    if inbundle(model, "aic") == TRUE
+        scalar aic = model.aic
+        scalar n = model.T
+        scalar k = model.ncoeff
+
+        aicc = aic + (2 * k * (k+1)) / (n-k-1)
+    endif
+
+    return aicc
 end function
 
 
