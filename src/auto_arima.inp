@@ -655,7 +655,7 @@ function bundle auto_arima_gui (const series y "Endogenous",
                                 const int min_Q[0::0] "min. seas. MA order parameter, Q",
                                 const int max_Q[0::0] "max. seas. MA order parameter, Q",
                                 const bool with_intercept[1] "With intercept",
-                                const bool verbose[1] "Print details")
+                                const bool verbose[0] "Print details")
     /* Wrapper for GUI access. */
 
     bundle self = null

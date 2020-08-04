@@ -288,7 +288,7 @@ return cmd
   <param name="with_intercept" type="bool" default="1" const="true">
 <description>With intercept</description>
   </param>
-  <param name="verbose" type="bool" default="1" const="true">
+  <param name="verbose" type="bool" default="0" const="true">
 <description>Print details</description>
   </param>
  </params>
