@@ -1,6 +1,6 @@
 Fit best SARIMA(X) model to univariate time series.
 
-Returns best SARIMAX model according to either AIC, AICc, BIC or HQC value. The function conducts a (brute force) search over possible model within the order constraints provided.
+Returns best SARIMAX model according to either AIC, AICc, BIC or HQC value. The function conducts a (brute force) search over possible models within the order constraints provided.
 
 
 This is an alternative package to the existing gretl armax package written by Yi-Nung Yang which has some limitations, e.g. it does only work for ARMA type models.
@@ -74,7 +74,7 @@ String holding the gretl/ hansl command for estimating the selected model.
 -----------------------------------------------------------------------
 
 -----------------------------------------------------------------------
-Function:       auto_arima_gui()
+Function:       auto_arima_gui(none)
 
 Arguments:
 
@@ -89,7 +89,7 @@ The optional 'opts' bundle:
 The user can pass an optional bundle as the 3rd argument to the
 auto_arima() function. Currently, the following options are supported:
 
-* verbose:           bool, print details if 1, otherwise no print out
+* verbose:           bool, print details if 1, otherwise no printout
                      (default 1).
 * with_intercept:    bool, if 1 (or TRUE) an intercept is added to the
                      model, of 0 (or FALSE) no intercept is added (default 1).
@@ -111,8 +111,8 @@ Default SARIMA parameter values:
 * max_d          :  scalar, maximum order of 1-st differencing (default 1)
 * min_q          :  scalar, minimum moving-average order (default 0)
 * max_q          :  scalar, maximum moving-average order (default 4)
-* min_P          :  scalar, minimum seasonal moving-average order (default 0)
-* max_P          :  scalar, maximum seasonal moving-average order (default 1)
+* min_P          :  scalar, minimum seasonal autoregressive order (default 0)
+* max_P          :  scalar, maximum seasonal autoregressive order (default 1)
 * min_D          :  scalar, minimum order of seasonal-differencing (default 0)
 * max_D          :  scalar, maximum order of seasonal-differencing (default 1)
 * min_Q          :  scalar, minimum seasonal moving-average order (default 0)
@@ -121,13 +121,22 @@ Default SARIMA parameter values:
 
 
 Changelog:
+- v0.6, August 2020:
+   + Fix bug in print_table_and_row_labels(): wrong models where highlighted
+     as best ones.
+   + Fix bug in get_auto_arima_parameters(): wrong n-th best model was retrieved.
+   + Fix typos in help file.
+   + Unit-tests added and improved.
+
 - v0.52, August 2020:
-    + fix "max_P" parameter for GUI wrapper function
+   + Fix "max_P" parameter for GUI wrapper function
 
 - v0.51, July 2020:
-    + Fix bug when executing get_auto_arima_command() function: Names of endogenous series and exogenous list where not correct in every case.
-    + GUI access: Boolean parameter "seasonality" dropped: It is automatically checked now whether the active data set has seasonal frequency.
-    + Minor formatting improvements.
+   + Fix bug when executing get_auto_arima_command() function: Names of
+     endogenous series and exogenous list where not correct in every case.
+   + GUI access: Boolean parameter "seasonality" dropped: It is automatically
+     checked now whether the active data set has seasonal frequency.
+   + Minor formatting improvements.
 
 - v0.5, July 2020:
-	+ initial release
+    + initial release

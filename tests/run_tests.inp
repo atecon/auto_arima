@@ -587,18 +587,25 @@ function void test_get_auto_arima_parameters (void)
     print "Non-seasonal data"
 
     bundle B = null
-    scalar B.n_combinations = 3
+    scalar B.n_combinations = 4
     matrix B.parameter_matrix = { 0, 0, 1; \
                                   0, 1, 1; \
-                                  2, 1, 3}
+                                  2, 1, 3;\
+                                  1, 1, 1}
 
     matrix B.sorted_model_id = {1, 3, 1, 2;\
-                                       3, 2, 3, 1;\
-                                       2, 1, 2, 3}
+                                3, 2, 3, 1;\
+                                2, 1, 2, 3;\
+                                4, 4, 4, 4}
 
 
     matrix m = get_auto_arima_parameters(B, "aicc", 3)
     assert_equal_num(m[1], 0)
+    assert_equal_num(m[2], 1)
+    assert_equal_num(m[3], 1)
+
+    matrix m = get_auto_arima_parameters(B, "aicc", 4)
+    assert_equal_num(m[1], 1)
     assert_equal_num(m[2], 1)
     assert_equal_num(m[3], 1)
 
@@ -615,6 +622,11 @@ function void test_get_auto_arima_parameters (void)
     matrix m = get_auto_arima_parameters(B, "hqc", 2)
     assert_equal_num(m[1], 0)
     assert_equal_num(m[2], 0)
+    assert_equal_num(m[3], 1)
+
+    matrix m = get_auto_arima_parameters(B, "hqc", 4)
+    assert_equal_num(m[1], 1)
+    assert_equal_num(m[2], 1)
     assert_equal_num(m[3], 1)
 
     # Should fail -- here we should see some error msg.
@@ -637,8 +649,8 @@ function void test_get_auto_arima_params_seas (void)
                                   2, 1, 3, 1, 1, 1}
 
     matrix B.sorted_model_id = {1, 3, 1, 2;\
-                                       3, 2, 3, 1;\
-                                       2, 1, 2, 3}
+                               3, 2, 3, 1;\
+                               2, 1, 2, 3}
 
     matrix m = get_auto_arima_parameters(B, "aicc", 3)
     assert_equal_num(m[1], 0)

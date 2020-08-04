@@ -207,9 +207,9 @@ function matrix get_auto_arima_parameters (const bundle self,
 
     errorif(!nelem(pos_info_criteria), sprintf("Information criteria '%s' unknown.", info_criteria))
 
-    matrix mask = self.sorted_model_id[, pos_info_criteria] .= model_rank
+    scalar model_id = self.sorted_model_id[model_rank, pos_info_criteria]
 
-    return selifr(self.parameter_matrix, mask)
+    return self.parameter_matrix[model_id, ]
 end function
 
 
@@ -365,9 +365,6 @@ function string get_auto_arima_command (const bundle self,
     if self.with_intercept == TRUE && self.intercept_added == TRUE
         # passed xlist did not include 'const'
         cmd += sprintf(" ; %s const %s %s", self.name_yseries, self.name_xlist, self.arima_model_options_string)
-        #elif self.with_intercept == TRUE && self.intercept_added == FALSE
-        # passed xlist did already include 'const'
-        #    cmd += sprintf(" ; %s %s %s", self.name_yseries, self.name_xlist, self.arima_model_options_string)
     else
         cmd += sprintf(" ; %s %s %s", self.name_yseries, self.name_xlist, self.arima_model_options_string)
     endif
