@@ -126,11 +126,15 @@ end function
 
 
 function strings get_parameter_names (void)
+    /* */
+
+    strings params = defarray("p", "d", "q")
+
     if data_has_seasonality()
-        return defarray("p", "d", "q", "P", "D", "Q")
-    else
-        return defarray("p", "d", "q")
+        strings params = params + defarray("P", "D", "Q")
     endif
+
+    return params
 end function
 
 
@@ -203,7 +207,7 @@ function matrix get_auto_arima_parameters (const bundle self,
 
     errorif(!nelem(pos_info_criteria), sprintf("Information criteria '%s' unknown.", info_criteria))
 
-    matrix mask = self.model_rank_by_criteria[, pos_info_criteria] .= model_rank
+    matrix mask = self.sorted_model_id[, pos_info_criteria] .= model_rank
 
     return selifr(self.parameter_matrix, mask)
 end function
@@ -241,6 +245,27 @@ function string asterisks (const int position[1::])
 end function
 
 
+function scalar rank_of_model_id (const scalar target_value,
+                                    matrix vector)
+    /* Return the index of a scalar value in vector 'vector'. The 'target_value' is allowed to appear in 'vector' only once. */
+
+    matrix vector = vec(vector)
+    scalar indx = NA
+
+    if sum(vector .= target_value) == 0
+        print "Warning: Value does not exist in vector."
+    elif sum(vector .= target_value) > 1
+        print "Warning: Value does appear multiple times in vector."
+    endif
+
+    loop i = 1..rows(vector)
+        if vector[i] == target_value
+            return $i
+        endif
+    endloop
+end function
+
+
 function void print_table_and_row_labels (const bundle self)
     /* Print actual summary values and row labels */
 
@@ -249,12 +274,13 @@ function void print_table_and_row_labels (const bundle self)
     string asterisks
 
     printf "\n"
-    loop j=1..rows(self.parameter_matrix)
+    loop j=1..self.n_combinations
         printf "%s ", row_labels[j]
 
-        # actual value plus asterisks indicating rank of model specification
+        # Actual value plus asterisks indicating rank of model specification
         loop i=1..nelem(criteria_names)
-            string asterisk_str = asterisks(self.model_rank_by_criteria[j,i])
+            string asterisk_str = asterisks(rank_of_model_id(j, self.sorted_model_id[,i]))
+
             printf "%14.3f%s", self.criteria_values[j,i], asterisk_str
             print_whitespaces(asterisk_str)
         endloop
@@ -353,15 +379,14 @@ function void rank_models_by_criteria (bundle *self)
     /* Rank models by information criteria. */
 
     matrix criteria_values = seq(1, self.n_combinations)' ~ self.criteria_values
-    matrix model_rank_by_criteria = initialize_criteria_values_mat(self)
-    strings criteria_names = get_info_criteria_names()
+    matrix sorted_model_id = initialize_criteria_values_mat(self)
+    strings criteria_names = cnameget(sorted_model_id)
 
     loop foreach i criteria_names
-        model_rank_by_criteria[,i] = msortby(criteria_values, 1+i)[,1]
+        sorted_model_id[,i] = msortby(criteria_values, 1+i)[,1]
     endloop
 
-    cnameset(model_rank_by_criteria, criteria_names)
-    self.model_rank_by_criteria = model_rank_by_criteria
+    self.sorted_model_id = sorted_model_id
 end function
 
 
@@ -385,8 +410,7 @@ function void get_parameters (const matrix parameter_matrix,
 end function
 
 function matrix initialize_criteria_values_mat (const bundle self)
-/* code description
-    return: type, description */
+    /* */
 
     matrix criteria_values = mshape(NA, rows(self.parameter_matrix), nelem(get_info_criteria_names()))
     cnameset(criteria_values, get_info_criteria_names())
