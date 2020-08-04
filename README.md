@@ -64,18 +64,23 @@ Common sample used for all models: 1877 to 1991
 ARIMA-spec.     aicc            aic             bic             hqc
 ---------------------------------------------------------------------------
 
-0|0|0      -1022.472        -1022.508        -1017.018        -1020.280
-0|0|1      -1033.926        -1034.033        -1025.798        -1030.691
+0|0|0 |0|0|0   164.084          163.996          172.821        167.582
+0|0|0 |0|0|1   39.974           39.798           51.564         44.580
 .
 .
 .
-4|0|3      -1043.260***     -1044.618***     -1019.914        -1034.591
-4|0|4      -1042.179        -1043.893        -1016.444        -1032.751
-4|1|0      -1015.697        -1016.248         -999.778        -1009.563
-4|1|1      -1031.216        -1031.994        -1012.780        -1024.195
-4|1|2      -1039.927        -1040.974        -1019.015        -1032.061
-4|1|3      -1038.410        -1039.768        -1015.064        -1029.741
-4|1|4      -1036.332        -1038.046        -1010.597        -1026.905
+2|1|1 |0|1|1   -481.613         -482.290         -462.164         -474.112
+2|1|1 |1|0|0   -463.112         -463.743         -443.152         -455.375
+2|1|1 |1|0|1   -488.421*        -489.269**       -465.736         -479.706*
+2|1|1 |1|1|0   -471.535         -472.213         -452.086         -464.034
+.
+.
+2|1|3 |1|0|1   -488.500**       -489.885***      -460.468         -477.931
+2|1|3 |1|1|0   -477.911         -479.092         -453.215         -468.577
+2|1|3 |1|1|1   -480.705         -482.192         -453.440         -470.509
+.
+.
+.
 ***************************************************************************
 ```
 
@@ -91,7 +96,7 @@ The output is:
 arima_params (1 x 6)
 
            p            d            q            P            D            Q
-           4            1            4            1            1            1
+           2            1            3            1            0            1
 ```
 
 Lastly, the user can retrieve the gretl command as a string variable for a specific model by means of the ```get_auto_arima_command()``` function. Also this function takes the same three arguments as ```get_auto_arima_parameters()```:
@@ -102,7 +107,7 @@ print arima_cmd
 ```
 which returns the string:
 ```
-arima 4 1 4 ; 1 1 0 ; lg const
+arima 2 0 0 ; 0 1 1 ; lg const L
 ```
 
 This string can be used for estimating the selected model:
@@ -112,46 +117,55 @@ This string can be used for estimating the selected model:
 ```
 Calling the built-in gretl ```arima``` command returns the following estimation output:
 ```
-Function evaluations: 155
-Evaluations of gradient: 46
+Function evaluations: 81
+Evaluations of gradient: 20
 
-Model 1: ARIMA, using observations 1950:02-1960:12 (T = 131)
+Model 1: ARMAX, using observations 1950:01-1960:12 (T = 132)
 Estimated using AS 197 (exact ML)
-Dependent variable: (1-L)(1-Ls) lg
+Dependent variable: (1-Ls) lg
 Standard errors based on Hessian
 
-             coefficient    std. error      z       p-value
-  ----------------------------------------------------------
-  const       8.07667e-05   0.00136210    0.05930   0.9527
-  phi_1      -0.979926      0.187665     -5.222     1.77e-07 ***
-  phi_2      -0.881923      0.174184     -5.063     4.12e-07 ***
-  phi_3      -1.01732       0.165473     -6.148     7.85e-10 ***
-  phi_4      -0.247282      0.177538     -1.393     0.1637
-  Phi_1      -0.420615      0.0854750    -4.921     8.61e-07 ***
-  theta_1     0.586332      0.199142      2.944     0.0032   ***
-  theta_2     0.613887      0.183238      3.350     0.0008   ***
-  theta_3     0.697329      0.193549      3.603     0.0003   ***
-  theta_4    -0.330226      0.200873     -1.644     0.1002
+             coefficient   std. error     z      p-value
+  -------------------------------------------------------
+  const       0.118604     0.00904671   13.11    2.88e-39 ***
+  phi_1       0.590424     0.0853470     6.918   4.58e-12 ***
+  phi_2       0.246938     0.0853191     2.894   0.0038   ***
+  Theta_1    -0.558276     0.0773696    -7.216   5.37e-13 ***
+  foo        -0.00301776   0.00239775   -1.259   0.2082
 
-Mean dependent var   0.000291   S.D. dependent var   0.045848
-Mean of innovations  0.000837   S.D. of innovations  0.034423
-R-squared            0.992497   Adjusted R-squared   0.992005
-Log-likelihood       249.9932   Akaike criterion    -477.9865
-Schwarz criterion   -446.3593   Hannan-Quinn        -465.1350
+Mean dependent var   0.119822   S.D. dependent var   0.061645
+Mean of innovations  0.000677   S.D. of innovations  0.035567
+R-squared            0.992258   Adjusted R-squared   0.992077
+Log-likelihood       250.4308   Akaike criterion    -488.8616
+Schwarz criterion   -471.5648   Hannan-Quinn        -481.8329
 
                         Real  Imaginary    Modulus  Frequency
   -----------------------------------------------------------
   AR
-    Root  1          -1.0980     0.0000     1.0980     0.5000
-    Root  2           0.1323    -1.0513     1.0596    -0.2301
-    Root  3           0.1323     1.0513     1.0596     0.2301
-    Root  4          -3.2805     0.0000     3.2805     0.5000
-  AR (seasonal)
-    Root  1          -2.3775     0.0000     2.3775     0.5000
-  MA
-    Root  1          -1.0000     0.0000     1.0000     0.5000
-    Root  2           0.0417     0.9991     1.0000     0.2434
-    Root  3           0.0417    -0.9991     1.0000    -0.2434
-    Root  4           3.0282     0.0000     3.0282     0.0000
+    Root  1           1.1452     0.0000     1.1452     0.0000
+    Root  2          -3.5362     0.0000     3.5362     0.5000
+  MA (seasonal)
+    Root  1           1.7912     0.0000     1.7912     0.0000
   -----------------------------------------------------------
+
 ```
+
+
+# Changelog
+
+### v0.6, August 2020
+- Fix bug in print_table_and_row_labels(): wrong models where highlighted as best ones.
+- Fix bug in get_auto_arima_parameters(): wrong n-th best model was retrieved.
+- Fix typos in help file.
+- Unit-tests added and improved.
+
+### v0.52, August 2020
+- Fix ```max_P``` parameter for GUI wrapper function
+
+### v0.51, July 2020
+- Fix bug when executing get_auto_arima_command() function: Names of endogenous series and exogenous list where not correct in every case.
+- GUI access: Boolean parameter "seasonality" dropped: It is automatically checked now whether the active data set has seasonal frequency.
+- Minor formatting improvements.
+
+### v0.5, July 2020
+- initial release
