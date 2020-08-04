@@ -309,12 +309,16 @@ function void print_summary_intro (const bundle self)
     print "criterion, AICC = corrected AIC, BIC = Schwarz Bayesian criterion and"
     print "HQC = Hannan-Quinn criterion across all ARIMA model specification."
     printf "\nCommon sample used for all models: %s to %s", self.sample_start, self.sample_end
+
+    printf "\nName of endogenous: '%s'\n", self.name_yseries
+    printf "Number of exogenous:  %d\n", nelem(self.xlist)
 end function
 
 
 function void print_table_border (void)
     printf "\n**********************************************************************************\n"
 end function
+
 
 function void print_table_header (void)
     strings criteria_names = get_info_criteria_names()
@@ -329,6 +333,7 @@ function void print_table_header (void)
     endloop
     printf "\n----------------------------------------------------------------------------------\n"
 end function
+
 
 function void print_auto_arima_results (const bundle self)
     /* Summarize parameter results for each information criteria. */
@@ -436,10 +441,17 @@ end function
 
 
 function string final_model_options_string (const bundle self)
-/* code description
-    return: type, description */
+    /* Compile string with options for arima command. */
 
-    return (self.verbose == 0) ? self.arima_model_options_string : (self.verbose == 1 ? "--quiet" : "--verbose")
+    string s = self.arima_model_options_string
+
+    if self.verbose == 0
+         s += " --quiet"
+    elif self.verbose == 2
+        s += " --verbose"
+    endif
+
+    return s
 end function
 
 
@@ -637,7 +649,6 @@ function bundle auto_arima_gui (const series y "Endogenous",
                                 const bool verbose[1] "Print details")
     /* Wrapper for GUI access. */
 
-    bundle model = null
     bundle self = null
     scalar self.verbose = verbose
     scalar self.with_intercept = with_intercept
@@ -668,6 +679,8 @@ function bundle auto_arima_gui (const series y "Endogenous",
     if model.error == TRUE
         printError("something went wrong.")
     else
+        string model.name_yseries = argname(y) # overwrite "y"
+        string model.name_xlist = (nelem(xlist)) ? argname(xlist) : ""
         print_auto_arima_results(model)
     endif
 

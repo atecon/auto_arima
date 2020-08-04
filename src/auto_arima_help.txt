@@ -125,7 +125,10 @@ Changelog:
    + Fix bug in print_table_and_row_labels(): wrong models where highlighted
      as best ones.
    + Fix bug in get_auto_arima_parameters(): wrong n-th best model was retrieved.
+   + Fix minor bug in final_model_options_string(): verbosity option did not work right.
+   + Add name of endogenous and xlist members when calling gui function.
    + Fix typos in help file.
+   + Print name of endogenous and number of exogenous in summary printout
    + Unit-tests added and improved.
 
 - v0.52, August 2020:

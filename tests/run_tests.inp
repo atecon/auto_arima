@@ -395,19 +395,19 @@ function void test_final_model_options_string (void)
     scalar B.verbose = 0
     string B.arima_model_options_string = "some_string"
     string r = final_model_options_string(B)
-    assert_equal_str(strstrip(r), "some_string")
+    assert_equal_str(strstrip(r), "some_string --quiet")
 
     bundle B = null
     scalar B.verbose = 1
     string B.arima_model_options_string = "some_string"
     string r = final_model_options_string(B)
-    assert_equal_str(strstrip(r), "--quiet")
+    assert_equal_str(strstrip(r), "some_string")
 
     bundle B = null
     scalar B.verbose = 2
     string B.arima_model_options_string = "some_string"
     string r = final_model_options_string(B)
-    assert_equal_str(strstrip(r), "--verbose")
+    assert_equal_str(strstrip(r), "some_string --verbose")
 end function
 test_final_model_options_string()
 
@@ -809,6 +809,8 @@ function void test_print_summary_intro (void)
     print "Start testing print_summary_intro()"
 
     bundle B = null
+    string B.name_yseries = "endog"
+    list B.xlist = null
     string B.sample_start = "2020-01-01"
     string B.sample_end = "2020-07-31"
 

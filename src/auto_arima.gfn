@@ -136,7 +136,10 @@ Changelog:
    + Fix bug in print_table_and_row_labels(): wrong models where highlighted
      as best ones.
    + Fix bug in get_auto_arima_parameters(): wrong n-th best model was retrieved.
+   + Fix minor bug in final_model_options_string(): verbosity option did not work right.
+   + Add name of endogenous and xlist members when calling gui function.
    + Fix typos in help file.
+   + Print name of endogenous and number of exogenous in summary printout
    + Unit-tests added and improved.
 
 - v0.52, August 2020:
@@ -286,7 +289,6 @@ return cmd
   </param>
  </params>
 <code>/* Wrapper for GUI access. */
-bundle model = null
 bundle self = null
 scalar self.verbose = verbose
 scalar self.with_intercept = with_intercept
@@ -314,6 +316,8 @@ bundle model = auto_arima(y, xlist, self)
 if model.error == TRUE
   printError(&quot;something went wrong.&quot;)
 else
+  string model.name_yseries = argname(y) # overwrite &quot;y&quot;
+  string model.name_xlist = (nelem(xlist)) ? argname(xlist) : &quot;&quot;
   print_auto_arima_results(model)
 endif
 return model
@@ -586,6 +590,8 @@ print &quot;is, minimized) values of the respective information criteria, AIC = 
 print &quot;criterion, AICC = corrected AIC, BIC = Schwarz Bayesian criterion and&quot;
 print &quot;HQC = Hannan-Quinn criterion across all ARIMA model specification.&quot;
 printf &quot;\nCommon sample used for all models: %s to %s&quot;, self.sample_start, self.sample_end
+printf &quot;\nName of endogenous: '%s'\n&quot;, self.name_yseries
+printf &quot;Number of exogenous:  %d\n&quot;, nelem(self.xlist)
 </code>
 </gretl-function>
 <gretl-function name="print_table_border" type="void" private="1">
@@ -671,9 +677,14 @@ endloop
  <params count="1">
   <param name="self" type="bundle" const="true"/>
  </params>
-<code>/* code description
-return: type, description */
-return (self.verbose == 0) ? self.arima_model_options_string : (self.verbose == 1 ? &quot;--quiet&quot; : &quot;--verbose&quot;)
+<code>/* Compile string with options for arima command. */
+string s = self.arima_model_options_string
+if self.verbose == 0
+  s += &quot; --quiet&quot;
+elif self.verbose == 2
+  s += &quot; --verbose&quot;
+endif
+return s
 </code>
 </gretl-function>
 <gretl-function name="arima_estimation_get_info_crits" type="matrix" private="1">
