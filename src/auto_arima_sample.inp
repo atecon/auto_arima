@@ -21,7 +21,7 @@ if EXAMPLE == 1
     list L = foo                # add an exogenous
 
     # Set "max_p" manually to 2
-    bundle Bout = auto_arima(lg, L, defbundle("verbose", 1, "max_p", 2))
+    bundle Bout = auto_arima(lg, L, defbundle("verbose", 0, "max_p", 2))
 
 elif EXAMPLE == 2
     series y = ldiff(gdp)
