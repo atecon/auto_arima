@@ -250,12 +250,13 @@ function scalar rank_of_model_id (const scalar target_value,
     /* Return the index of a scalar value in vector 'vector'. The 'target_value' is allowed to appear in 'vector' only once. */
 
     matrix vector = vec(vector)
-    scalar indx = NA
 
     if sum(vector .= target_value) == 0
         print "Warning: Value does not exist in vector."
+        return NA
     elif sum(vector .= target_value) > 1
         print "Warning: Value does appear multiple times in vector."
+        return NA
     endif
 
     loop i = 1..rows(vector)
