@@ -5,7 +5,7 @@ services:
 
 os: linux
 
-dist: eoan
+dist: focal
 
 git:
   depth: 1
@@ -18,6 +18,7 @@ before_install:
   - docker run --detach --entrypoint=/bin/bash --name test -t gretl
   - docker exec -it test gretlcli -i extra
   - docker exec -it test gretlcli -i string_utils
-  
+  - docker exec -it test gretlcli -i assertion
+
 script:
   - docker exec -it test /bin/bash run_tests.sh
