@@ -1,4 +1,5 @@
 # The gretl *auto_arima* package
+[![Build Status](https://travis-ci.org/atecon/string_utils.svg?branch=master)](https://travis-ci.org/atecon/auto_arima)
 
 Returns best SARIMAX model according to either the AIC, the AICc, the BIC or the HQC information criteria. The function conducts a (brute force) search over possible model within the order constraints provided.
 
