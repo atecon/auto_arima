@@ -1,5 +1,6 @@
-set verbose off
 clear
+set verbose off
+set assert stop
 
 include assertion.gfn
 
@@ -58,82 +59,101 @@ test_default_values(nile)
 
 
 open nile.gdt -q -p
-function void test_y_is_constant (const series y)
+bundles Parameters = array()
+Parameters = Parameters + _(y = nile, expected = FALSE)
+Parameters = Parameters + _(y = const, expected = TRUE)
+function void test_y_is_constant (const bundles P)
     print "Start testing y_is_constant()"
 
-    bundle B = null
-    series B.y = y
-    scalar B.verbose = TRUE
-    scalar B.error = FALSE
-    string B.name_yseries = "nile"
+    loop foreach i P
+        # Given
+        bundle B = null
+        B = _(y = P[i].y,\
+                verbose = TRUE ,
+                error = FALSE,
+                name_yseries = "foo")
 
-    y_is_constant(&B)
-    assert_false(B.error)
+        # When
+        y_is_constant(&B)
+        scalar actual = B.error
 
-    series c = 1
-    series B.y = c
-    string B.name_yseries = "c"
-    y_is_constant(&B)
-    assert_true(B.error)
+        # Then
+        assert(actual == P[i].expected)
+    endloop
 end function
-test_y_is_constant(nile)
-
+test_y_is_constant(Parameters)
 
 
 open nile.gdt -q -p
-function void test_drop_intercept_from_xlist (const series y)
+bundles Parameters = array()
+Parameters = Parameters + _(y = nile,\
+                            verbose = TRUE,\
+                            with_intercept = TRUE,\
+                            xlist = "",\
+                            expected = FALSE)
+Parameters = Parameters + _(y = nile,\
+                            verbose = TRUE,\
+                            with_intercept = FALSE,\
+                            xlist = "",\
+                            expected = FALSE)
+Parameters = Parameters + _(y = nile,\
+                            verbose = TRUE,\
+                            with_intercept = TRUE,\
+                            xlist = "x",\
+                            expected = FALSE)
+Parameters = Parameters + _(y = nile,\
+                            verbose = TRUE,\
+                            with_intercept = FALSE,\
+                            xlist = "x",\
+                            expected = FALSE)
+Parameters = Parameters + _(y = nile,\
+                            verbose = TRUE,\
+                            with_intercept = TRUE,\
+                            xlist = "",\
+                            expected = FALSE)
+Parameters = Parameters + _(y = nile,\
+                            verbose = TRUE,\
+                            with_intercept = FALSE,\
+                            xlist = "const",\
+                            expected = FALSE)
+Parameters = Parameters + _(y = nile,\
+                            verbose = TRUE,\
+                            with_intercept = TRUE,\
+                            xlist = "const",\
+                            expected = TRUE)
+Parameters = Parameters + _(y = nile,\
+                            verbose = TRUE,\
+                            with_intercept = FALSE,\
+                            xlist = "const",\
+                            expected = FALSE)
+function void test_drop_intercept_from_xlist (const bundles P, const series x)
     print "Start testing drop_intercept_from_xlist()"
 
-    bundle B = null
-    series B.y = y
-    scalar B.verbose = TRUE
-    scalar B.with_intercept = TRUE
-    list B.xlist = null
+    loop foreach i P
+        # Given
+        bundle B = null
+        series B.y = P[i].y
+        B.verbose = P[i].verbose
+        B.with_intercept = P[i].with_intercept
+        string X = P[i].xlist
+        if X == "const"
+            list xlist = const
+            xlist
+        else
+            list xlist = (strlen(X) == 0) ? null : x
+        endif
+        list B.xlist = xlist
 
-    # empty xlist + intercept = TRUE
-    drop_intercept_from_xlist(&B)
-    list xlist = B.xlist
-    assert_false(inlist(xlist, "const"))
+        # When
+        drop_intercept_from_xlist(&B)
+        list xlist = B.xlist
+        scalar actual = inlist(xlist, "const")
 
-    # empty xlist + intercept = FALSE
-    scalar B.with_intercept = FALSE
-    drop_intercept_from_xlist(&B)
-    list xlist = B.xlist
-    assert_false(inlist(xlist, "const"))
-
-    # xlist + intercept = TRUE
-    series x = normal()
-    list B.xlist = x
-    scalar B.with_intercept = TRUE
-    drop_intercept_from_xlist(&B)
-    list xlist = B.xlist
-    assert_false(inlist(xlist, "const"))
-
-    # xlist + intercept = FALSE
-    series x = normal()
-    list B.xlist = x
-    scalar B.with_intercept = FALSE
-    drop_intercept_from_xlist(&B)
-    list xlist = B.xlist
-    assert_false(inlist(xlist, "const"))
-
-    # const + intercept = FALSE
-    series const = 1
-    list B.xlist = const
-    scalar B.with_intercept = FALSE
-    drop_intercept_from_xlist(&B)
-    list xlist = B.xlist
-    assert_false(inlist(xlist, "const"))
-
-    # const + intercept = TRUE
-    series const = 1
-    list B.xlist = const
-    scalar B.with_intercept = TRUE
-    drop_intercept_from_xlist(&B)
-    list xlist = B.xlist
-    assert_true(inlist(xlist, "const"))
+        # Then
+        assert(actual == P[i].expected)
+    endloop
 end function
-test_drop_intercept_from_xlist(nile)
+test_drop_intercept_from_xlist(Parameters, nile)
 
 
 function void test_prepare_arima_options (void)
