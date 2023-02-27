@@ -2,8 +2,8 @@
 <gretl-functions>
 <gretl-function-package name="auto_arima" needs-time-series-data="true" minver="2020b">
 <author email="atecon@posteo.de">Artur Tarassow</author>
-<version>0.6</version>
-<date>2020-08-04</date>
+<version>0.7</version>
+<date>2023-02-27</date>
 <description>Return best ARIMA model according to information criteria value</description>
 <tags>C22 C52</tags>
 <label>Automatic ARIMA</label>
@@ -11,19 +11,24 @@
 <help>
 Fit best SARIMA(X) model to univariate time series.
 
-Returns best SARIMAX model according to either AIC, AICc, BIC or HQC value. The function conducts a (brute force) search over possible models within the order constraints provided.
+Returns best SARIMA(X) model according to either AIC, AICc, BIC or HQC value.
+The function conducts a (brute force) search over possible models within the
+order constraints provided.
 
-
-This is an alternative package to the existing gretl armax package written by Yi-Nung Yang which has some limitations, e.g. it does only work for ARMA type models.
+This is an alternative package to the existing gretl &quot;armax&quot; package written by
+Yi-Nung Yang which has some limitations compared to this package (e.g. it does
+only support ARMA type models).
 
 The features of the auto_arima package are:
 - Consideration of seasonal ARIMA models with and without exogenous regressors.
-- Simple API.
-- GUI access through the gretl menu.
-- Public convenience functions for the user for summarizing results, or retrieving the gretl ARIMA command of the 'best' model.
+- Simple user-interface.
+- GUI-access through the gretl menu.
+- Public convenience functions for the user for summarizing results, or
+  retrieving the gretl ARIMA command of the 'best' model.
 - Source code is tested by means of unit-tests to minimize bugs.
 
-Please ask questions and report bugs on the gretl mailing list if possible. Alternatively, create an issue ticket on the github repo (see below).
+Please ask questions and report bugs on the gretl mailing list if possible.
+Alternatively, create an issue ticket on the github repo (see below).
 Source code and test script(s) can be found here:
 https://github.com/atecon/auto_arima
 
@@ -36,12 +41,12 @@ Function:       auto_arima(const series y, const list xlist[null],
 Arguments:
 y:              series, Endogenous variable
 xlist:          list, List of exogenous variables (optional)
-opts:           bundle, Bundle for passing SARIMA parameters and further
+opts:           bundle, Bundle for passing SARIMA(X) parameters and further
                 options (see below for details)
 
 Return:
 Bundle comprising the various items.
------------------------------------------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 -----------------------------------------------------------------------
 Function:       print_auto_arima_results(const bundle model)
@@ -52,7 +57,7 @@ model:          bundle, Bundle returned by auto_arima() function
 Return:
 No return value. Print summary results for each parameter combination and
 information criteria estimated in tabular form.
------------------------------------------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 -----------------------------------------------------------------------
 Function:       get_auto_arima_parameters (const bundle model, const string
@@ -66,8 +71,9 @@ model_rank:     int, Compute the SARIMA parameter vector for the n-th
                 best model in terms of the chosen information criteria.
 
 Return:
-Vector of SARIMA parameters of the n-th best model in terms of the chosen information criteria.
------------------------------------------------------------------------
+Vector of SARIMA parameters of the n-th best model in terms of the chosen
+information criteria.
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 -----------------------------------------------------------------------
 Function:       get_auto_arima_command (const bundle model, const string
@@ -82,15 +88,16 @@ model_rank:     int, Consider the n-th best model in terms of the chosen
 
 Return:
 String holding the gretl/ hansl command for estimating the selected model.
------------------------------------------------------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 -----------------------------------------------------------------------
-Function:       auto_arima_gui(none)
+Function:       auto_arima_gui(void)
 
 Arguments:
 
 Return:
-A wrapper for the GUI. Prints summary results and returns a bundle with model results.
+A wrapper for the GUI. Prints summary results and returns a bundle with model
+results.
 -----------------------------------------------------------------------
 
 
@@ -104,17 +111,17 @@ auto_arima() function. Currently, the following options are supported:
                      (default 1).
 * with_intercept:    bool, if 1 (or TRUE) an intercept is added to the
                      model, of 0 (or FALSE) no intercept is added (default 1).
-* with_seasonality:  bool, if 1 (or TRUE) seasonal ARIMA parameters
+* with_seasonality:  bool, if 1 (or TRUE) seasonal ARIMA parameter
                      combinations are considered (if the data frequency
                      has seasonality), otherwise seasonal ARIMA parameters
                      are not considered (default 1).
 * estimation_method: string, if &quot;conditional_ml&quot; use conditional maximum
                      likelihood
-* min_p, max_p, min_d, max_d, min_q, max_q, min_P, max_P, min_D, max_D, min_Q, max_Q:               Model parameters (see below for explanations)
+* min_p, max_p, min_d, max_d, min_q, max_q, min_P, max_P, min_D, max_D,
+  min_Q, max_Q:      Model parameters (see below for explanations)
 
 
-
-Default SARIMA parameter values:
+Default SARIMA(X) parameter values:
 --------------------------------
 * min_p          :  scalar, minimum autoregressive order (default 0)
 * max_p          :  scalar, maximum autoregressive order (default 4)
@@ -130,8 +137,11 @@ Default SARIMA parameter values:
 * max_Q          :  scalar, maximum seasonal moving-average order (default 1)
 
 
-
 Changelog:
+- v0.7, February 2023:
+   + Remove line breaks in help text
+   + Fix typos
+
 - v0.6, August 2020:
    + Fix bug in print_table_and_row_labels(): wrong models where highlighted
      as best ones.
@@ -343,7 +353,7 @@ print_auto_arima_results(self)
 series y = self.y
 if isconst(y) == TRUE
   if self.verbose &gt; 0
-    printError(sprintf(&quot;Endogenous series '%s' is constant..&quot;, self.name_yseries))
+    printError(sprintf(&quot;Endogenous series '%s' is constant.&quot;, self.name_yseries))
   endif
   self.error = TRUE
 endif
