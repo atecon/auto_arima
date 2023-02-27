@@ -2,7 +2,7 @@
 <gretl-functions>
 <gretl-function-package name="auto_arima" needs-time-series-data="true" minver="2020b">
 <author email="atecon@posteo.de">Artur Tarassow</author>
-<version>0.7</version>
+<version>0.8</version>
 <date>2023-02-27</date>
 <description>Return best ARIMA model according to information criteria value</description>
 <tags>C22 C52</tags>
@@ -138,9 +138,14 @@ Default SARIMA(X) parameter values:
 
 
 Changelog:
-- v0.7, February 2023:
+- v0.8, February 2023:
    + Remove line breaks in help text
    + Fix typos
+
+- v0.7, September 2020:
+   + Bugfix: In case if verbose=0 an error in the arima command was not caught
+     which led to a full stop.
+   + Set default for parameter &quot;verbose&quot; to 0 (print not details).
 
 - v0.6, August 2020:
    + Fix bug in print_table_and_row_labels(): wrong models where highlighted

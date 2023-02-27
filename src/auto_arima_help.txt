@@ -127,9 +127,14 @@ Default SARIMA(X) parameter values:
 
 
 Changelog:
-- v0.7, February 2023:
+- v0.8, February 2023:
    + Remove line breaks in help text
    + Fix typos
+
+- v0.7, September 2020:
+   + Bugfix: In case if verbose=0 an error in the arima command was not caught
+     which led to a full stop.
+   + Set default for parameter "verbose" to 0 (print not details).
 
 - v0.6, August 2020:
    + Fix bug in print_table_and_row_labels(): wrong models where highlighted
