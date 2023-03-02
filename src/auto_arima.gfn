@@ -173,6 +173,12 @@ Changelog:
 
 - v0.5, July 2020:
     + initial release
+
+
+TODO:
+=====
+- Re-think the defaults for the AR part 1 and 4
+- The GUI is quite busy, with all those possible min/max orders. I would imagine that for a &quot;quick and dirty&quot; job one would always want to specify the _maximum_ order, but in general the _minimum_ order should be always 0. Therefore, it may make sense to get rid of most of those boxes, and tell the user that to do fancy things one should use scripting.
 </help>
 <gretl-function name="auto_arima" type="bundle">
  <params count="3">
