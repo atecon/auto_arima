@@ -3,7 +3,7 @@
 <gretl-function-package name="auto_arima" needs-time-series-data="true" minver="2020b">
 <author email="atecon@posteo.de">Artur Tarassow</author>
 <version>0.8</version>
-<date>2023-02-27</date>
+<date>2023-03-02</date>
 <description>Return best ARIMA model according to information criteria value</description>
 <tags>C22 C52</tags>
 <label>Automatic ARIMA</label>
