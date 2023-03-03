@@ -134,7 +134,7 @@ Changelog:
 - v0.7, September 2020:
    + Bugfix: In case if verbose=0 an error in the arima command was not caught
      which led to a full stop.
-   + Set default for parameter "verbose" to 0 (print not details).
+   + Set default for parameter "verbose" to 0 (do not print details).
 
 - v0.6, August 2020:
    + Fix bug in print_table_and_row_labels(): wrong models where highlighted
@@ -167,4 +167,8 @@ Changelog:
 TODO:
 =====
 - Re-think the defaults for the AR part 1 and 4
-- The GUI is quite busy, with all those possible min/max orders. I would imagine that for a "quick and dirty" job one would always want to specify the _maximum_ order, but in general the _minimum_ order should be always 0. Therefore, it may make sense to get rid of most of those boxes, and tell the user that to do fancy things one should use scripting.
+- The GUI is quite busy, with all those possible min/max orders. I would
+imagine that for a "quick and dirty" job one would always want to specify the
+_maximum_ order, but in general the _minimum_ order should be always 0.
+Therefore, it may make sense to get rid of most of those boxes, and tell the
+user that to do fancy things one should use scripting.
