@@ -153,20 +153,5 @@ Schwarz criterion   -471.5648   Hannan-Quinn        -481.8329
 
 
 # Changelog
-
-### v0.6, August 2020
-- Fix bug in print_table_and_row_labels(): wrong models where highlighted as best ones.
-- Fix bug in get_auto_arima_parameters(): wrong n-th best model was retrieved.
-- Fix typos in help file.
-- Unit-tests added and improved.
-
-### v0.52, August 2020
-- Fix ```max_P``` parameter for GUI wrapper function
-
-### v0.51, July 2020
-- Fix bug when executing get_auto_arima_command() function: Names of endogenous series and exogenous list where not correct in every case.
-- GUI access: Boolean parameter "seasonality" dropped: It is automatically checked now whether the active data set has seasonal frequency.
-- Minor formatting improvements.
-
-### v0.5, July 2020
-- initial release
+See here:
+https://github.com/atecon/auto_arima/blob/master/src/auto_arima_help.txt
