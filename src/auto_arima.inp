@@ -5,7 +5,7 @@ function void y_is_constant (bundle *self)
 
     if isconst(y) == TRUE
         if self.verbose > 0
-            printError(sprintf("Endogenous series '%s' is constant..", self.name_yseries))
+            printError(sprintf("Endogenous series '%s' is constant.", self.name_yseries))
         endif
         self.error = TRUE
     endif
