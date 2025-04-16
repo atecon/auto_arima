@@ -655,6 +655,7 @@ function bundle auto_arima_gui (const series y "Endogenous",
                                 const int min_Q[0::0] "min. seas. MA order parameter, Q",
                                 const int max_Q[0::0] "max. seas. MA order parameter, Q",
                                 const bool with_intercept[1] "With intercept",
+                                const bool conditional_ml[0] "Conditional instead of exact ML",
                                 const bool verbose[0] "Print details")
     /* Wrapper for GUI access. */
 
@@ -662,10 +663,15 @@ function bundle auto_arima_gui (const series y "Endogenous",
     scalar self.verbose = verbose
     scalar self.with_intercept = with_intercept
     scalar self.with_seasonality = FALSE
+    string self.estimation_method = conditional_ml == TRUE ? \
+                                    "conditional_ml" : "exact_ml"
 
-    if data_has_seasonality() == TRUE
+    scalar season_selected = max_P + max_D + max_Q
+    scalar user_wants_seasonality = season_selected + data_has_seasonality()
+
+    if user_wants_seasonality == TRUE
         scalar self.with_seasonality = TRUE
-        printInfo("Seasonality of your data set detected. Will estimate SARIMAX type of models.")
+        printInfo("Will estimate SARIMAX type of models.")
         flush
     endif
 
@@ -675,7 +681,7 @@ function bundle auto_arima_gui (const series y "Endogenous",
     scalar self.max_d = max_d
     scalar self.min_q = min_q
     scalar self.max_q = max_q
-    if data_has_seasonality()
+    if user_wants_seasonality == TRUE
         scalar self.min_P = min_P
         scalar self.max_P = max_P
         scalar self.min_D = min_D
