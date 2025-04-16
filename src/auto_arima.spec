@@ -1,13 +1,13 @@
 author = Artur Tarassow
 email = atecon@posteo.de
-version = 0.8
-date = 2023-03-02
+version = 0.9
+date = 2025-04-16
 description = Return best SARIMA(x) model according to information criteria value
 tags = C22 C52
 min-version = 2020b
 public = auto_arima print_auto_arima_results get_auto_arima_parameters get_auto_arima_command auto_arima_gui print_auto_arima_results_gui
 data-requirement = needs-time-series-data
-help = auto_arima_help.txt
+help = auto_arima_help.md
 sample-script = auto_arima_sample.inp
 gui-main = auto_arima_gui
 label = Automatic ARIMA
