@@ -667,9 +667,9 @@ function bundle auto_arima_gui (const series y "Endogenous",
                                     "conditional_ml" : "exact_ml"
 
     scalar season_selected = max_P + max_D + max_Q
-    scalar user_wants_seasonality = season_selected + data_has_seasonality()
+    scalar consider_seasonality = (data_has_seasonality() == TRUE) && (season_selected > 0)
 
-    if user_wants_seasonality == TRUE
+    if consider_seasonality == TRUE
         scalar self.with_seasonality = TRUE
         printInfo("Will estimate SARIMAX type of models.")
         flush
@@ -681,14 +681,13 @@ function bundle auto_arima_gui (const series y "Endogenous",
     scalar self.max_d = max_d
     scalar self.min_q = min_q
     scalar self.max_q = max_q
-    if user_wants_seasonality == TRUE
-        scalar self.min_P = min_P
-        scalar self.max_P = max_P
-        scalar self.min_D = min_D
-        scalar self.max_D = max_D
-        scalar self.min_Q = min_Q
-        scalar self.max_Q = max_Q
-    endif
+    scalar self.min_P = min_P
+    scalar self.max_P = max_P
+    scalar self.min_D = min_D
+    scalar self.max_D = max_D
+    scalar self.min_Q = min_Q
+    scalar self.max_Q = max_Q
+
     bundle model = auto_arima(y, xlist, self)
 
     if model.error == TRUE
