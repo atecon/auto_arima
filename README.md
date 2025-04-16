@@ -25,7 +25,7 @@ If at least one of the following options is non-zero, the function will consider
 - `max_D`: Maximum seasonal-differencing order
 - `max_Q`: Maximum seasonal moving-average order
 
-Non-seasonal ARIMA(X) considered if seasonality parameters are zero or dataset is non-seasonal.
+Non-seasonal ARIMA(X) considered if these seasonality parameters are zero or dataset is non-seasonal.
 
 
 # Public Functions
