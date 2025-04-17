@@ -8,13 +8,13 @@ scalar EXAMPLE = 1
 
 if EXAMPLE == 1
     # Box and Jenkins "Series G" (airline passengers)
-    open bjg.gdt -p -q         # monthly frequency
+    open bjg.gdt --preserve --quiet         # monthly frequency
 elif EXAMPLE == 2
-    open hendry_jae.gdt -q -p  # annual frequency
+    open hendry_jae.gdt --preserve --quiet  # annual frequency
 endif
 
 
-list xlist = null
+list xlist = deflist()
 if EXAMPLE == 1
     # Find "best" ARIMA model and pass some additional option
     series foo = normal()
