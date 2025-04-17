@@ -1,7 +1,7 @@
 author = Artur Tarassow
 email = atecon@posteo.de
 version = 0.9
-date = 2025-04-16
+date = 2025-04-17
 description = Return best SARIMA(x) model according to information criteria value
 tags = C22 C52
 min-version = 2020b
