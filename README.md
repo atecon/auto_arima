@@ -51,7 +51,7 @@ Fit SARIMA(X) model to endogenous series `y`.
 
 ## Returns
 
-Bundle containing model results and diagnostics.
+Bundle containing model results and diagnostics. The bundle item `error` (int) is set to 1 if an error occurs, otherwise 0.
 
 ---
 
