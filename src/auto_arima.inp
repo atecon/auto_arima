@@ -67,7 +67,7 @@ function bundle set_bundle_and_get_defaults (const series y,
     from 'opts' bundle. */
 
     if !exists(opts)
-        bundle opts = null
+        bundle opts
     endif
 
     bundle self = default_values(y)
@@ -88,14 +88,14 @@ end function
 function bundle default_values (const series y)
     /* Set default values */
 
-    bundle self = null
+    bundle self
     scalar self.error = FALSE
     scalar self.y_is_constant = FALSE
     scalar self.with_intercept = TRUE
     scalar self.intercept_added = FALSE
     scalar self.with_seasonality = data_has_seasonality()
     scalar self.verbose = 1
-    list self.xlist = null
+    list self.xlist = deflist()
 
     strings self.methods_supported  = defarray("exact_ml", "conditional_ml")
     string self.estimation_method = "exact_ml" # gretl built-in default
@@ -170,7 +170,7 @@ function bundle auto_arima (const series y "Endogenous",
     /* Main public function. */
 
     if !exists(opts)
-        bundle opts = null
+        bundle opts
     endif
 
     bundle self = set_bundle_and_get_defaults(y, opts)
@@ -659,7 +659,7 @@ function bundle auto_arima_gui (const series y "Endogenous",
                                 const bool verbose[0] "Print details")
     /* Wrapper for GUI access. */
 
-    bundle self = null
+    bundle self
     scalar self.verbose = verbose
     scalar self.with_intercept = with_intercept
     scalar self.with_seasonality = FALSE
