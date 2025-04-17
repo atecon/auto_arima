@@ -4,7 +4,7 @@ Fit best SARIMA(X) model to univariate time series.
 
 Returns best SARIMA(X) model according to either AIC, AICc, BIC, or HQC value. The function conducts a brute-force search over possible models within the order constraints provided.
 
-This package provides an alternative to gretl's "armax" package (written by Yi-Nung Yang), with additional features:
+The *auto_arima* has the following features:
 
 - Support for seasonal ARIMA models with/without exogenous regressors
 - GUI access through gretl menu
@@ -12,6 +12,13 @@ This package provides an alternative to gretl's "armax" package (written by Yi-N
 - Source code is tested by means of unit-tests to minimize bugs.
 
 Source code and test scripts: https://github.com/atecon/auto_arima
+
+This package is an extension of gretl's built-in `arima` command for which the  degrees of differencing in the command are not treated as subject to search:
+
+https://gretl.sourceforge.net/gretl-help/cmdref.html#arima
+
+Furthermore, the *auto_arima* package is also an alternative to the *armax* package written by Yi-Nung Yang which has some limitations, e.g. it does only work for ARMA type models.
+
 
 ## GUI Access
 
