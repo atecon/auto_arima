@@ -38,7 +38,7 @@ Non-seasonal ARIMA(X) considered if these seasonality parameters are zero or dat
 # Public Functions
 
 ```
-auto_arima (const series y, const list xlist, bundle opts)
+auto_arima (series y, list xlist, bundle opts)
 ```
 
 Fit SARIMA(X) model to endogenous series `y`.
@@ -56,10 +56,11 @@ Bundle containing model results and diagnostics.
 ---
 
 ```
-print_auto_arima_results (const bundle model)
+print_auto_arima_results (bundle model)
 ```
 
-Print summary results for parameter combinations and information criteria.
+Print summary results for parameter combinations and information criteria. In case model estimation fails for some parameter setting (e.g. due to non-convergence), NA is returned for this setting.
+
 
 ## Parameters
 
@@ -68,7 +69,7 @@ Print summary results for parameter combinations and information criteria.
 ---
 
 ```
-get_auto_arima_parameters (const bundle model, const string info_criteria, const int model_rank[1::])
+get_auto_arima_parameters (bundle model, string info_criteria, int model_rank[1::])
 ```
 
 Retrieve SARIMA parameters for n-th best model by information criterion.
@@ -86,7 +87,7 @@ Vector of SARIMA parameters.
 ---
 
 ```
-get_auto_arima_command (const bundle model, const string info_criteria, const int model_rank[1::])
+get_auto_arima_command (bundle model, string info_criteria, int model_rank[1::])
 ```
 
 Generate hansl command for specified model.
